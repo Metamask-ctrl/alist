@@ -180,37 +180,47 @@ jobs:
           
           # 检查容器状态
           docker compose ps
-      # 5. 安装 rclone，在 AList 正常健康的运行状态下挂载 WebDAV
-      # 5. 安装 rclone 和 fuse3 驱动，在 AList 健康运行状态下执行物理挂载
+      # 5. 生成标准本地配置，在 AList 健康运行状态下执行物理挂载
       - name: Mount AList WebDAV via Rclone
         env:
           LOGIN_PASS: ${{ secrets.PASS }}
         run: |
           echo "1. 正在安装宿主机 rclone 以及核心挂载驱动 fuse3..."
-          # 核心修复：GitHub 虚拟机必须手动补齐 fuse3 驱动，否则 rclone mount 必崩
           sudo apt-get update && sudo apt-get install -y rclone fuse3
           
-          echo "2. 开始执行纯环境变量免配置挂载..."
-          export RCLONE_WEBDAV_URL="http://localhost:5244/dav"
-          export RCLONE_WEBDAV_USER="admin"
-          export RCLONE_WEBDAV_PASS="$LOGIN_PASS"
+          echo "2. 创建并注入标准的 rclone 本地配置文件..."
+          # 创建配置目录
+          mkdir -p ~/.config/rclone/
+          
+          # 核心修复：直接现场手写配置文件，利用 rclone 自身的 obscure 现场对你的 PASS 进行安全混淆，生成符合它胃口的密文
+          OBSCURED_PASS=$(rclone obscure "$LOGIN_PASS")
+          
+          cat << EOF > ~/.config/rclone/rclone.conf
+          [alist_dav]
+          type = webdav
+          url = http://localhost:5244/dav
+          vendor = other
+          user = admin
+          pass = $OBSCURED_PASS
+          EOF
           
           # 创建并确保挂载点权限完全开放
           sudo mkdir -p ./alist-mount
           sudo chmod 777 ./alist-mount
           
-          # 核心修复：添加 --allow-other 允许 Docker 跨用户访问，加入 --vfs-cache-max-age 优化稳定性
-          sudo -E rclone mount :webdav: ./alist-mount \
+          echo "3. 开始使用物理配置文件执行后台挂载..."
+          # 核心修复：指定使用刚才配置好的独立标签 alist_dav，不再使用会引发歧义的匿名 :webdav:
+          sudo rclone mount alist_dav: ./alist-mount \
             --vfs-cache-mode full \
             --allow-other \
             --vfs-cache-max-age 24h \
+            --config /home/runner/.config/rclone/rclone.conf \
             --daemon
           
-          echo "3. 正在给 rclone 后台挂载预留缓冲时间..."
+          echo "4. 正在给 rclone 后台挂载预留缓冲时间..."
           sleep 8
           
-          echo "4. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
-          # 如果这里能顺利打印出你网盘里的文件夹（例如 阿里云盘、百度网盘等），就代表彻底通了！
+          echo "5. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
           ls -la ./alist-mount
 
       # 5. 保持工作流运行
