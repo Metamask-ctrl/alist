@@ -196,7 +196,7 @@ jobs:
           sudo rclone mount :webdav: ./alist-mount \
             --webdav-url="http://localhost:5244/dav/Crypt" \
             --webdav-user="admin" \
-            --webdav-pass="$(rclone obfuscate '${{ secrets.PASS }}')" \
+            --webdav-pass="${{ secrets.PASS }}" \
             --vfs-cache-mode full \
             --allow-other \
             --daemon
