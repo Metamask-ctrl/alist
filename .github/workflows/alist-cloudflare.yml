@@ -134,21 +134,33 @@ jobs:
             # 语法：alist admin import <文件路径> <解密密码>
             # -v 参数用于指定覆盖冲突模式（1 代表覆盖现有存储）
             # 2. 修正：利用 docker cp 命令强行将文件推送到容器的内部路径
-            docker exec alist ./alist stop
+            docker compose stop alist
             
-            rm -rf /opt/alist/data
-            mkdir -p /opt/alist/data
+            echo "3. 清理宿主机上原有的空挂载目录，并直接解压物理备份到挂载点..."
+            # 注意：这里必须是你在 docker-compose 里挂载的宿主机真实路径 ./alist-data
+            rm -rf ./alist-data
+            mkdir -p ./alist-data
+            ls -la ./alist-data
             
-            unzip -P $DATA_PASS ./data.zip -d /opt/alist/data
+            # 安装解压工具（以防 Runner 默认没带）
+            #sudo apt-get update && sudo apt-get install -y unzip
             
-            docker exec alist ./alist restart
+            # 解压到宿主机的真实挂载路径中
+            unzip -P "$DATA_PASS" ./data.zip -d ./alist-data
             
-            docker exec alist ./alist admin set "$LOGIN_PASS"
+            echo "4. 检查解压后的文件结构，确保数据库文件落盘..."
+            ls -la ./alist-data
             
-            #docker cp ./backup.json alist:/opt/alist/data/backup.json
+            echo "5. 重新拉起 AList 容器，使其无缝加载刚刚恢复的物理数据库..."
+            docker compose start alist
             
-            #docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS"
+            # 给容器启动和数据库加载预留 5 秒钟缓冲时间
+         
             
+            echo "6. 强制将最终登录管理员密码同步为你设置的 PASS..."
+            docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
+            
+            echo "配置物理恢复完成！"         
          
             
             echo "配置恢复完成！"
