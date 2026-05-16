@@ -12,8 +12,6 @@ jobs:
         uses: actions/checkout@v4
 
       # 1. 创建整合了 AList 和 Immich 的 docker-compose.yml 配置文件
-      # 提示：Immich 包含多个微服务（Server、Machine Learning、PostgreSQL、Redis），对内存有一定要求
-      # GitHub Actions 虚拟机提供 7GB 内存，完全足够让它们临时跑起来
       - name: Create Docker Compose File
         run: |
           cat << 'EOF' > docker-compose.yml
@@ -60,7 +58,8 @@ jobs:
 
             immich-postgres:
               container_name: immich_postgres
-              image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/postgres:14-alpine
+              # 使用 Immich 官方指定的专属 pgvecto-rs 镜像（支持人脸识别/机器学习向量）
+              image: tensorchord/pgvecto-rs:pg14-v0.2.0
               environment:
                 POSTGRES_PASSWORD: DB_PASSWORD_TEMPORARY
                 POSTGRES_USER: postgres
@@ -71,7 +70,8 @@ jobs:
 
             immich-redis:
               container_name: immich_redis
-              image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/redis:6.2-alpine
+              # 使用官方纯净版 Redis
+              image: redis:6.2-alpine
               restart: always
 
             # --- Cloudflare 穿透隧道 ---
@@ -79,7 +79,7 @@ jobs:
               image: cloudflare/cloudflared:latest
               container_name: cloudflared-tunnel
               restart: always
-              # 使用 host 网络模式，方便一个隧道同时穿透 localhost:5244 (AList) 和 localhost:2283 (Immich)
+              # 使用 host 网络模式，方便一个隧道同时穿透本地 5244 (AList) 和 2283 (Immich)
               command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
               network_mode: "host"
               depends_on:
@@ -97,7 +97,7 @@ jobs:
           DB_DATABASE_NAME=immich
           DB_HOSTNAME=immich-postgres
           
-          # 告诉 Immich 机器学习组件的位置
+          # 绑定机器学习组件的位置
           IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003
           EOF
 
@@ -107,29 +107,30 @@ jobs:
           CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           PASS: ${{ secrets.PASS }}
         run: |
-          # 后台启动所有容器（由于镜像较多，首次拉取可能需要 1~2 分钟）
+          # 后台启动所有容器
           docker compose up -d
           
-          # 给容器多一点启动和初始化数据库的时间
-          echo "正在等待所有服务启动..."
-          sleep 15
+          # 给多容器环境（尤其是数据库初始化）留出充足的启动时间
+          echo "正在等待所有服务完成初始化..."
+          sleep 20
           
           echo "========================================="
           echo "AList 初始登录管理员密码设置成功："
           docker exec alist ./alist admin set ${PASS}
           echo "========================================="
           
-          # 打印所有容器运行状态，确保没有报错退出的容器
+          # 检查并打印所有容器运行状态
           docker compose ps
 
-      # 4. 保持工作流运行
+      # 4. 保持工作流运行（防止虚拟机立即销毁）
       - name: Keep Workflow Alive
         run: |
           echo "=================================================="
-          echo "AList 和 Immich 服务已全部就绪！"
-          echo "1. AList 访问地址: https://alist-test.yourdomain.com"
-          echo "2. Immich 访问地址: https://immich.yourdomain.com"
+          echo "AList 和 Immich 服务已全部在 GitHub Actions 上就绪！"
+          echo "1. AList 外部访问地址: 你在 Cloudflare 绑定的 AList 域名"
+          echo "2. Immich 外部访问地址: 你在 Cloudflare 绑定的 Immich 域名"
           echo "=================================================="
-          echo "工作流保持运行中，最大运行 6 小时..."
+          echo "工作流保持运行中，最大运行时间为 6 小时。"
+          echo "如需停止，请直接在 GitHub Actions 页面点击 'Cancel run'。"
           
           while true; do sleep 60; done
