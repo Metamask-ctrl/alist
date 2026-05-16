@@ -131,7 +131,7 @@ jobs:
             # 2. 修正：利用 docker cp 命令强行将文件推送到容器的内部路径
             docker cp ./backup.json alist:/opt/alist/data/backup.json
             
-            docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS" -v 1
+            docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS"
             
             echo "配置恢复完成！"
             
