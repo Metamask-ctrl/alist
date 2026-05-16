@@ -47,6 +47,8 @@ jobs:
                 - "5244:5244"
               volumes:
                 - ./alist-data:/opt/alist/data
+                 /home/runner/work/my_photos
+                - /home:/mnt/home
               environment:
                 - PUID=0
                 - PGID=0
