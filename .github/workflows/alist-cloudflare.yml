@@ -143,7 +143,7 @@ jobs:
 
           echo "========================================="
           echo "正在强制重置/同步最终登录管理员密码..."
-          docker exec alist ./alist admin set "$LOGIN_PASS"
+          #docker exec alist ./alist admin set "$LOGIN_PASS"
           echo "========================================="
           
           # 检查容器状态
