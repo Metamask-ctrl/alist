@@ -181,28 +181,36 @@ jobs:
           # 检查容器状态
           docker compose ps
       # 5. 安装 rclone，在 AList 正常健康的运行状态下挂载 WebDAV
+      # 5. 安装 rclone 和 fuse3 驱动，在 AList 健康运行状态下执行物理挂载
       - name: Mount AList WebDAV via Rclone
         env:
           LOGIN_PASS: ${{ secrets.PASS }}
         run: |
-          echo "1. 正在安装宿主机 rclone 工具..."
-          sudo apt-get update && sudo apt-get install -y rclone
+          echo "1. 正在安装宿主机 rclone 以及核心挂载驱动 fuse3..."
+          # 核心修复：GitHub 虚拟机必须手动补齐 fuse3 驱动，否则 rclone mount 必崩
+          sudo apt-get update && sudo apt-get install -y rclone fuse3
           
           echo "2. 开始执行纯环境变量免配置挂载..."
-          # 核心修复：通过内置环境变量 RCLONE_WEBDAV_PASS 直接传递明文，彻底免去密码加密命令报错
           export RCLONE_WEBDAV_URL="http://localhost:5244/dav"
           export RCLONE_WEBDAV_USER="admin"
           export RCLONE_WEBDAV_PASS="$LOGIN_PASS"
           
+          # 创建并确保挂载点权限完全开放
+          sudo mkdir -p ./alist-mount
+          sudo chmod 777 ./alist-mount
+          
+          # 核心修复：添加 --allow-other 允许 Docker 跨用户访问，加入 --vfs-cache-max-age 优化稳定性
           sudo -E rclone mount :webdav: ./alist-mount \
             --vfs-cache-mode full \
             --allow-other \
+            --vfs-cache-max-age 24h \
             --daemon
           
-          echo "3. 等待 rclone 挂载就绪..."
+          echo "3. 正在给 rclone 后台挂载预留缓冲时间..."
+          sleep 8
           
-          
-          echo "4. 验证挂载点，查看是否成功读取到 AList 的根目录网盘结构："
+          echo "4. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
+          # 如果这里能顺利打印出你网盘里的文件夹（例如 阿里云盘、百度网盘等），就代表彻底通了！
           ls -la ./alist-mount
 
       # 5. 保持工作流运行
