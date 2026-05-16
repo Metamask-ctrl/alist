@@ -129,9 +129,14 @@ jobs:
             # 语法：alist admin import <文件路径> <解密密码>
             # -v 参数用于指定覆盖冲突模式（1 代表覆盖现有存储）
             # 2. 修正：利用 docker cp 命令强行将文件推送到容器的内部路径
+            
+            docker exec alist ./alist admin set "$LOGIN_PASS"
+            
             docker cp ./backup.json alist:/opt/alist/data/backup.json
             
             docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS"
+            
+            sleep 5
             
             echo "配置恢复完成！"
             
@@ -143,7 +148,9 @@ jobs:
 
           echo "========================================="
           echo "正在强制重置/同步最终登录管理员密码..."
-          #docker exec alist ./alist admin set "$LOGIN_PASS"
+          
+          
+          
           echo "========================================="
           
           # 检查容器状态
