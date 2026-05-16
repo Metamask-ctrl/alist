@@ -180,33 +180,30 @@ jobs:
           
           # 检查容器状态
           docker compose ps
-
-      # 3. 安装 rclone 并将 AList 的 WebDAV 挂载到虚拟机的物理路径
+      # 5. 安装 rclone，在 AList 正常健康的运行状态下挂载 WebDAV
       - name: Mount AList WebDAV via Rclone
+        env:
+          LOGIN_PASS: ${{ secrets.PASS }}
         run: |
-          # 安装 rclone
+          echo "1. 正在安装宿主机 rclone 工具..."
           sudo apt-get update && sudo apt-get install -y rclone
           
-          # 创建本地挂载点文件夹
-          mkdir -p ./alist-mount
+          echo "2. 开始执行纯环境变量免配置挂载..."
+          # 核心修复：通过内置环境变量 RCLONE_WEBDAV_PASS 直接传递明文，彻底免去密码加密命令报错
+          export RCLONE_WEBDAV_URL="http://localhost:5244/dav"
+          export RCLONE_WEBDAV_USER="admin"
+          export RCLONE_WEBDAV_PASS="$LOGIN_PASS"
           
-          # 配置 rclone (假设你的 AList 恢复后，WebDAV 路径为 /dav，登录密码为你设置的 PASS)
-          # 注意：这里的密码需要通过 rclone obfuscate 加密，或者直接用环境参数传入
-          # 为了简化，直接使用不落盘的临时后台挂载
-          sudo rclone mount :webdav: ./alist-mount \
-            --webdav-url="http://localhost:5244/dav/Crypt" \
-            --webdav-user="admin" \
-            --webdav-pass="${{ secrets.PASS }}" \
+          sudo -E rclone mount :webdav: ./alist-mount \
             --vfs-cache-mode full \
             --allow-other \
             --daemon
           
-          echo "等待挂载完成..."
-         
+          echo "3. 等待 rclone 挂载就绪..."
           
-          # 验证是否挂载成功
+          
+          echo "4. 验证挂载点，查看是否成功读取到 AList 的根目录网盘结构："
           ls -la ./alist-mount
-
 
       # 5. 保持工作流运行
       - name: Keep Workflow Alive
