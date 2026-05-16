@@ -47,6 +47,7 @@ jobs:
       - name: Start AList and Cloudflare Tunnel
         env:
           CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+          PASS: ${{ secrets.PASS }}
         run: |
           # 后台启动容器
           docker compose up -d
@@ -56,7 +57,7 @@ jobs:
           
           echo "========================================="
           echo "AList 初始登录管理员密码："
-          docker exec alist ./alist admin
+          docker exec alist ./alist admin set ${PASS}
           echo "========================================="
           
           # 打印容器运行状态，方便排查问题
