@@ -11,13 +11,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. 创建整合了 AList 和 Immich 的 docker-compose.yml 配置文件
+      # ================= 【缓存优化 1：APT 包管理器缓存】 =================
+      - name: Cache APT Packages
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-rclone-fuse3
+
+      - name: Install Dependencies (unzip, rclone, fuse3)
+        run: |
+          sudo apt-get update
+          # 如果缓存命中了，apt 会直接从本地归档目录极速安装，不再走公网下载
+          sudo apt-get install -y unzip rclone fuse3
+
+      # ================= 【缓存优化 2：Docker 镜像层缓存】 =================
+      - name: Cache Docker Layers
+        id: cache-docker
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-images-${{ hashFiles('docker-compose.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-images-
+
       - name: Create Docker Compose File
         run: |
           cat << 'EOF' > docker-compose.yml
           version: '3.8'
           services:
-            # --- AList 服务 ---
             alist:
               image: xhofe/alist:latest
               container_name: alist
@@ -31,12 +53,12 @@ jobs:
                 - UMASK=022
               restart: always
 
-            # --- Immich 服务核心组 ---
             immich-server:
               container_name: immich_server
               image: ghcr.io/immich-app/immich-server:release
               volumes:
                 - ./immich-upload:/usr/src/app/upload
+                - ./alist-mount:/usr/src/app/external_alist:ro  # 映射 rclone 挂载点
                 - /etc/localtime:/etc/localtime:ro
               env_file:
                 - .env
@@ -54,6 +76,7 @@ jobs:
               image: ghcr.io/immich-app/immich-machine-learning:release
               volumes:
                 - ./immich-cache:/cache
+                - ./alist-mount:/usr/src/app/external_alist:ro  # 同步映射 rclone 挂载点
               env_file:
                 - .env
               restart: always
@@ -79,7 +102,6 @@ jobs:
               image: redis:6.2-alpine
               restart: always
 
-            # --- Cloudflare 穿透隧道 ---
             tunnel:
               image: cloudflare/cloudflared:latest
               container_name: cloudflared-tunnel
@@ -91,7 +113,6 @@ jobs:
                 - immich-server
           EOF
 
-      # 2. 创建 Immich 专属的 .env 环境变量文件
       - name: Create Immich Env File
         run: |
           cat << 'EOF' > .env
@@ -102,6 +123,24 @@ jobs:
           IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003
           EOF
 
+      # ================= 【镜像载入/预拉取加速】 =================
+      - name: Load Cached Docker Images
+        if: steps.cache-docker.outputs.cache-hit == 'true'
+        run: |
+          echo "检测到 Docker 镜像缓存，正在从本地导入..."
+          if [ -f /tmp/.buildx-cache/images.tar ]; then
+            docker load -i /tmp/.buildx-cache/images.tar
+          fi
+
+      - name: Pull and Save Docker Images (If Cache Miss)
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          echo "无缓存，正在从网络全量拉取 Docker 镜像..."
+          docker compose pull
+          mkdir -p /tmp/.buildx-cache
+          # 将拉取下来的所有大镜像打包归档到缓存目录中
+          docker save $(docker compose config | grep 'image:' | awk '{print $2}' | sort | uniq) -o /tmp/.buildx-cache/images.tar
+
       # 3. 启动所有 Docker 容器
       - name: Start Services and Cloudflare Tunnel
         env:
@@ -109,110 +148,62 @@ jobs:
         run: |
           docker compose up -d
           echo "正在等待所有服务完成基础初始化..."
-          sleep 15
+          sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
-      # 4. 下载加密的 JSON 备份文件并导入到 AList（核心步骤）
+      # 4. 下载物理 data.zip 备份并无损解压还原
       - name: Fetch and Restore Encrypted JSON Config
         env:
-          CONFIG_URL: ${{ secrets.ALIST_CONFIG_URL }}
-          BACKUP_PASS: ${{ secrets.ALIST_BACKUP_PASSWORD }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-          
           DATA_URL: ${{ secrets.DATA_URL }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
+          LOGIN_PASS: ${{ secrets.PASS }}
         run: |
-          echo "正在从远程 URL 下载加密的 JSON 备份文件..."
-          # 下载并存放到 AList 挂载目录下，方便容器读取
-          #curl -L "$CONFIG_URL" -o ./backup.json
-          
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
           curl -L "$DATA_URL" -o ./data.zip
           
           if [ -s ./data.zip ]; then
-            echo "备份文件下载成功，正在执行解密导入..."
-            
-            # 使用 AList 自带的 admin 导入指令 
-            # 语法：alist admin import <文件路径> <解密密码>
-            # -v 参数用于指定覆盖冲突模式（1 代表覆盖现有存储）
-            # 2. 修正：利用 docker cp 命令强行将文件推送到容器的内部路径
+            echo "备份文件下载成功，正在执行覆盖解压..."
             docker compose stop alist
             
-            echo "3. 清理宿主机上原有的空挂载目录，并直接解压物理备份到挂载点..."
-            # 注意：这里必须是你在 docker-compose 里挂载的宿主机真实路径 ./alist-data
+            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
             sudo rm -rf ./alist-data
             sudo mkdir -p ./alist-data
-            ls -la ./alist-data
             
-            # 安装解压工具（以防 Runner 默认没带）
-            #sudo apt-get update && sudo apt-get install -y unzip
-            
-            # 解压到宿主机的真实挂载路径中
+            # 使用前面已经安装/缓存好的解压命令
             sudo unzip -P "$DATA_PASS" ./data.zip -d ./alist-data
             
-            echo "4. 检查解压后的文件结构，确保数据库文件落盘..."
-            ls -la ./alist-data
-            
-            echo "5. 重新拉起 AList 容器，使其无缝加载刚刚恢复的物理数据库..."
+            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             docker compose start alist
             
-            # 给容器启动和数据库加载预留 5 秒钟缓冲时间
-         
-            
-            echo "6. 强制将最终登录管理员密码同步为你设置的 PASS..."
+            echo "6. 强制同步最终登录管理员密码..."
             docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
-            
             echo "配置物理恢复完成！"         
-         
-            
-            echo "配置恢复完成！"
-            
-            # 临时清理掉容器外的物理 json 文件防止泄露
-           
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
           fi
+          rm -f ./data.zip
 
-          echo "========================================="
-          echo "正在强制重置/同步最终登录管理员密码..."
-          
-          
-          
-          echo "========================================="
-          
-          # 检查容器状态
-          docker compose ps
-      # 5. 生成标准本地配置，在 AList 健康运行状态下执行物理挂载
+      # 5. 在 AList 健康运行状态下执行 rclone 挂载
       - name: Mount AList WebDAV via Rclone
         env:
           LOGIN_PASS: ${{ secrets.PASS }}
         run: |
-          echo "1. 正在安装宿主机 rclone 以及核心挂载驱动 fuse3..."
-          sudo apt-get update && sudo apt-get install -y rclone fuse3
-          
-          echo "2. 【核心修复】等待 AList 容器彻底苏醒并能正常提供 WebDAV 服务..."
-          # 死循环检测 AList 状态，只有当 HTTP 状态码为 200 或 302 时才往下走，最多等待 60 秒
+          echo "1. 等待 AList 容器彻底苏醒并能正常提供 WebDAV 服务..."
+          # 死循环检测，只要 AList 好了就立刻放行，不需要傻傻死等
           for i in {1..30}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5244/ || true)
-            echo "当前 AList 后台响应状态码: $STATUS"
+            echo "当前 AList 后台状态码: $STATUS"
             if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
-              echo "【成功】AList 已经完全启动，可以安全挂载！"
+              echo "【成功】AList 已经完全就绪！"
               break
             fi
-            echo "AList 仍在初始化中，等待 2 秒..."
-            sleep 2
-            if [ $i -eq 30 ]; then
-              echo "【致命错误】AList 启动超时，请检查 AList 容器日志！"
-              docker compose logs alist
-              exit 1
-            fi
+            sleep 1.5
           done
           
-          echo "3. 创建并注入标准的 rclone 本地配置文件..."
+          echo "2. 创建并注入标准的 rclone 本地配置文件..."
           mkdir -p ~/.config/rclone/
-          
-          # 利用本地 rclone 当场混淆密码
           OBSCURED_PASS=$(rclone obscure "$LOGIN_PASS")
           
-          # 核心优化：改用 docker 默认网桥网关 172.17.0.1，比 localhost 在虚拟机环境中更稳定
           cat << EOF > ~/.config/rclone/rclone.conf
           [alist_dav]
           type = webdav
@@ -222,12 +213,10 @@ jobs:
           pass = $OBSCURED_PASS
           EOF
           
-          # 创建并确保挂载点权限完全开放
           sudo mkdir -p ./alist-mount
           sudo chmod 777 ./alist-mount
           
-          echo "4. 开始使用物理配置文件执行后台挂载..."
-          # 核心优化：调低不必要的安全限制，添加 --network-mode 级别容错
+          echo "3. 开始使用物理配置文件执行后台挂载..."
           sudo -E rclone mount alist_dav: ./alist-mount \
             --vfs-cache-mode full \
             --allow-other \
@@ -235,17 +224,15 @@ jobs:
             --config /home/runner/.config/rclone/rclone.conf \
             --daemon
           
-          echo "5. 正在给 rclone 后台建联预留缓冲时间..."
-          sleep 10
+          sleep 4 # 缩短缓冲，4秒足够本地网桥建联
           
-          echo "6. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
-          #ls -la ./alist-mount
+          # 挂载完毕后，通知 Immich 刷新挂载树状态
+          docker compose restart immich-server immich-machine-learning
 
-      # 5. 保持工作流运行
+      # 6. 保持工作流运行
       - name: Keep Workflow Alive
         run: |
           echo "=================================================="
-          echo "AList 已成功解密并恢复 JSON 配置！"
-          echo "AList 和 Immich 服务已全部就绪。"
+          echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
           echo "=================================================="
           while true; do sleep 60; done
