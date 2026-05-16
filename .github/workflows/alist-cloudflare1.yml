@@ -44,24 +44,6 @@ jobs:
         run: |
           sudo ip -6 route add default dev eth0
     
-      - name: Install Lucky
-        run: |
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "x86_64" ]; then
-          LUCKY_URL="https://github.com/gdy666/lucky/releases/latest/download/lucky-linux-amd64.tar.gz"
-          elif [ "$ARCH" = "aarch64" ]; then
-          LUCKY_URL="https://github.com/gdy666/lucky/releases/latest/download/lucky-linux-arm64.tar.gz"
-          fi
-          curl -L -o lucky.tar.gz $LUCKY_URL
-          tar -zxvf lucky.tar.gz
-          sudo mv lucky /usr/local/bin/lucky
-          sudo chmod +x /usr/local/bin/lucky
-
-      - name: Run Lucky
-        run: |
-          nohup lucky -p 16601 > lucky.log 2>&1 &
-          sleep 3
-          cat lucky.log
         
       - name: Create Immich Env File
         run: |
