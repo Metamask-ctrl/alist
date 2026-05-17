@@ -342,22 +342,11 @@ jobs:
           
           sudo curl -fsSL https://tailscale.com/install.sh | sh
           
-          echo "启动 tailscaled（userspace 模式）..."
-          sudo nohup tailscaled --tun=userspace-networking --state=mem: > /dev/null 2>&1 &
-
-          echo "登录 Tailscale..."
-          sudo tailscale up \
-            --authkey=${TAIL} \
-            --hostname=github-actions \
-            --tun=userspace-networking \
-            --accept-routes \
-            --accept-dns=false \
-            --ephemeral
-
-          sudo tailscale status    
+          sudo tailscale up --authkey=$TAIL
+          
+          sudo tailscale status
+          
                    
-
-
           
       # 6. 保持工作流运行
       - name: Keep Workflow Alive
