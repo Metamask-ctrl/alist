@@ -163,6 +163,9 @@ jobs:
           DATA_URL: ${{ secrets.DATA_URL }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
           LOGIN_PASS: ${{ secrets.PASS }}
+  
+          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+          
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           curl -L "$DATA_URL" -o ./data.zip
