@@ -182,6 +182,8 @@ jobs:
             sudo unzip -P "$DATA_PASS" ./data.zip -d ./alist-data
             
             echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+            cd ./prism
             docker compose start alist
             
             echo "6. 强制同步最终登录管理员密码..."
@@ -191,7 +193,7 @@ jobs:
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
           fi
-          sudo rm -f ./data.zip
+          #sudo rm -f ./data.zip
 
 
       - name: Enable SSHD and set root password
