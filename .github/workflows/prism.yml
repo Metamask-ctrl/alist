@@ -86,7 +86,7 @@ jobs:
             # 使用前面已经安装/缓存好的解压命令
             sudo unzip -P "$DATA_PASS" ./mysql.zip -d ./
            
-            sudo chown -R runner:runner ./mariadb
+            sudo chmod -R 777 ./mariadb
            
             cd ./mariadb/mariadb
             
@@ -117,7 +117,7 @@ jobs:
             # 使用前面已经安装/缓存好的解压命令
             sudo unzip -P "$DATA_PASS" ./prism.zip -d ./
             
-            sudo chown -R runner:runner ./photoprism
+            sudo chmod -R 777 ./photoprism
             
             cd ./photoprism/photoprism
             
