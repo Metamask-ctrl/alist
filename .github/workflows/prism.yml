@@ -318,9 +318,9 @@ jobs:
          
             sudo chmod -R 777 ./immich-app
             
-            sudo cp -r ./immich-app /root
+           # sudo cp -r ./immich-app /root
             
-            cd /root/immich-app
+            cd ./immich-app
             
             docker compose up -d
             
