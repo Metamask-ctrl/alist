@@ -393,17 +393,29 @@ jobs:
  
         run: |
           echo "正在从远程 URL 安装Tailscale..."
-          
-          sudo curl -fsSL https://tailscale.com/install.sh | sh
+          sudo mkdir -p /var/lib/tailscale
           
           sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
           
+          
+          sudo curl -fsSL https://tailscale.com/install.sh | sh
+          
+          sudo nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/dev/null 2>&1 &
+         
           # sudo tailscale up --authkey=$TAIL
           
-          sudo tailscale up --authkey=$TAIL --hostname=my-server
+          sleep 3
+
+          echo "Running tailscale up..."
+          
+          sudo tailscale up \
+            --authkey=${{ secrets.TAIL }} \
+            --hostname=github-actions-runner \
+            --accept-routes \
+            --accept-dns=false
           
           sudo tailscale status
-          
+
           echo "恢复immich..."
           
           sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) | docker exec -i immich_postgres psql -U postgres -d immich
