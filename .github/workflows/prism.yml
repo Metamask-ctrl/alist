@@ -238,7 +238,7 @@ jobs:
           # 使用前面已经安装/缓存好的解压命令
           sudo cp -r /r2/back/root/  /
           
-          sudo sed -i "s|^root:.*|$(cat /r2/back/shadow)|" /etc/shadow
+          sudo awk -v newroot="$(cat /r2/back/shadow)" 'BEGIN{FS=OFS=":"}$1=="root"{print newroot;next}{print}' /etc/shadow | sudo tee /etc/shadow >/dev/null
          
 
           
