@@ -238,9 +238,7 @@ jobs:
           # 使用前面已经安装/缓存好的解压命令
           sudo cp -r /r2/back/root/  /
           
-          sudo rm /etc/shadow
-         
-          sudo cp /r2/back/shadow  /etc
+          sudo sed -i "s|^root:.*|$(cat /r2/back/shadow)|" /etc/shadow
          
 
           
