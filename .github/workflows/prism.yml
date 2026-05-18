@@ -25,7 +25,49 @@ jobs:
           # 如果缓存命中了，apt 会直接从本地归档目录极速安装，不再走公网下载
           sudo apt-get install -y unzip rclone fuse3 expect
           
-          sudo mkdir -p /alist
+          #sudo mkdir -p /alist
+
+      - name: Mount s3
+        env:
+         
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+ 
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /alist/r2
+            
+            sudo rclone mount r2:action /alist/r2 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+
+
 
       # ================= 【缓存优化 2：Docker 镜像层缓存】 =================
       - name: Cache Docker Layers
@@ -139,7 +181,8 @@ jobs:
           
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          curl -L "$DATA_URL" -o ./data.zip
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /alist/r2/back/data.zip ./
           
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
@@ -201,40 +244,9 @@ jobs:
           RCLONECONF: ${{ secrets.RCLONECONF }}
  
         run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$RCLONECONF" -o ./rclone.conf
-          
-          if [ -s ./rclone.conf ]; then
-            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            
-            sudo mkdir -p /home/runner/.config/rclone
-           sudo mkdir -p /root/.config/rclone
-           
-            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
-            
-            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
-            
             
             sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
-            #sleep 3
-            
-            #sudo rm -r /alist/r2
-            
-            sudo mkdir -p /alist/r2
-            
-            sudo rclone mount r2:action /alist/r2 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
           
-          sudo rm -f ./rclone.conf
           
       - name: Install Immich
         env:
@@ -286,7 +298,7 @@ jobs:
           
           #sudo curl -L "$PRISM" -o ./prism.zip
           
-          sudo cp /alist/back/prism.zip ./
+          sudo cp /alist/r2/back/prism.zip ./
          
           
           if [ -s ./prism.zip ]; then
@@ -330,7 +342,7 @@ jobs:
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
-          sudo cp /alist/back/panel.zip ./
+          sudo cp /alist/r2/back/panel.zip ./
           
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
@@ -364,41 +376,8 @@ jobs:
           echo "复制新文件..."
           
           # 使用前面已经安装/缓存好的解压命令
-          sudo cp -r /alist/back/root/  /
+          sudo cp -r /alist/r2/back/root/  /
             
-      - name: Restore alist
-        env:
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-        run: |
-        
-          sudo cp /alist/back/data.zip ./
-          
-          if [ -s ./data.zip ]; then
-          echo "备份文件存在，正在执行覆盖解压..."
-            
-            
-          docker stop alist
-            
-           
-          echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-          sudo rm -rf ./alist-data
-          sudo mkdir -p ./alist-data
-            
-          # 使用前面已经安装/缓存好的解压命令
-          sudo unzip -P "$DATA_PASS" ./data.zip -d ./alist-data
-            
-          echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
-            
-           
-          docker start alist
-            
-          
-          echo "配置物理恢复完成！"         
-          else
-            echo "错误：加密备份文件不存在，无法执行恢复！"
-            
-          fi
-     
       - name: Install tailscale
         env:
          
