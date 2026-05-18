@@ -311,7 +311,7 @@ jobs:
           
           sudo cp /alist/back/photoprism.sql ./
           
-          docker exec -i 1Panel-mariadb-rh6u  mysql -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
+          docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
           
           docker start photoprism
           
