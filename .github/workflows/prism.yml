@@ -73,40 +73,7 @@ jobs:
         run: |
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
           
-      - name: Restore 1Panel
-        env:
-         
-          PANEL: ${{ secrets.PANEL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$PANEL" -o ./panel.zip
-          
-          if [ -s ./panel.zip ]; then
-            echo "panel文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo 1pctl stop 
-            
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
-           
-            sudo chmod -R 777 ./1panel
-           
-            sudo rm -rf /opt/1panel
-            
-            sudo cp -r ./1panel /opt
-            
-            sudo 1pctl start
-            
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
-          
-          sudo rm -f ./panel.zip
-
+  
 
       - name: Install mariadb
         env:
@@ -191,6 +158,7 @@ jobs:
           echo "正在等待所有服务完成基础初始化..."
           sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
+
       # 4. 下载物理 data.zip 备份并无损解压还原
       - name: Fetch and Restore Encrypted JSON Config
         env:
@@ -252,11 +220,11 @@ jobs:
         
           #sudo 1pctl user-info
           
-          echo "$USER" | sudo 1pctl update username
+          #echo "$USER" | sudo 1pctl update username
           
-          sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
+          #sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
           
-          echo "20333" | sudo 1pctl update port
+          #echo "20333" | sudo 1pctl update port
           
       - name: Mount alist
         env:
@@ -337,7 +305,63 @@ jobs:
           fi
           
           
-
+      - name: Restore 1Panel
+        run: |
+          
+          echo "清理旧文件..."
+            
+          # 使用前面已经安装/缓存好的解压命令
+          sudo 1pctl stop 
+            
+            
+          sudo rm -rf /opt/1panel
+            
+          echo "复制备份文件..."
+            
+          sudo cp -r /alist/back/1panel /opt
+            
+          sudo 1pctl start
+            
+            
+            
+      - name: Restore file
+        run: |
+          
+          echo "复制新文件..."
+          
+          # 使用前面已经安装/缓存好的解压命令
+          sudo cp -r /alist/back/root/  /
+            
+      - name: Restore alist
+        env:
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+        run: |
+          
+          if [ -s /alist/back/data.zip ]; then
+          echo "备份文件存在，正在执行覆盖解压..."
+            
+            
+          docker compose stop alist
+            
+           
+          echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
+          sudo rm -rf ./alist-data
+          sudo mkdir -p ./alist-data
+            
+          # 使用前面已经安装/缓存好的解压命令
+          sudo unzip -P "$DATA_PASS" /alist/back/data.zip -d ./alist-data
+            
+          echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+           
+          docker compose start alist
+            
+          
+          echo "配置物理恢复完成！"         
+          else
+            echo "错误：加密备份文件不存在，无法执行恢复！"
+            exit 1
+          fi
      
       - name: Install tailscale
         env:
