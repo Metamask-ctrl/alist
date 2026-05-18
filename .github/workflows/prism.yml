@@ -293,8 +293,7 @@ jobs:
             docker compose up -d
             
             
-            #sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) \
-              | docker exec -i immich_postgres psql -U postgres -d immich
+            #sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) | docker exec -i immich_postgres psql -U postgres -d immich
             
             docker restart immich_server
             
