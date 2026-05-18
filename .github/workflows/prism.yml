@@ -369,8 +369,10 @@ jobs:
         env:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
+        
+          sudo cp /alist/back/data.zip ./
           
-          if [ -s /alist/back/data.zip ]; then
+          if [ -s ./data.zip ]; then
           echo "备份文件存在，正在执行覆盖解压..."
             
             
@@ -382,7 +384,7 @@ jobs:
           sudo mkdir -p ./alist-data
             
           # 使用前面已经安装/缓存好的解压命令
-          sudo unzip -P "$DATA_PASS" /alist/back/data.zip -d ./alist-data
+          sudo unzip -P "$DATA_PASS" ./data.zip -d ./alist-data
             
           echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             
