@@ -114,7 +114,100 @@ jobs:
       - name: Install 1Panel
         run: |
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+ 
+ 
+ 
+      - name: Install Photoprism
+        env:
+          PRISM: ${{ secrets.PRISM }}
+         
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          LOGIN_PASS: ${{ secrets.PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
           
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          sudo cp /alist/r2/back/prism.zip ./
+         
+          
+          if [ -s ./prism.zip ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./prism.zip -d ./
+            
+            sudo chmod -R 777 ./photoprism
+            
+            cd ./photoprism/photoprism
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          echo  "Restore Photoprism sql..."
+         
+          docker stop photoprism
+          
+          sudo cp /alist/back/photoprism.sql ./
+          
+          docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
+          
+          docker start photoprism
+          
+          sudo rm -f ./photoprism.sql
+          
+          sudo rm -f ./prism.zip
+
+      
+          
+      - name: Restore 1Panel
+        env:
+         
+          PANEL: ${{ secrets.PANEL }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo cp /alist/r2/back/panel.zip ./
+          
+          if [ -s ./panel.zip ]; then
+            echo "panel文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo 1pctl stop 
+            
+            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
+           
+            sudo chmod -R 777 ./1panel
+           
+            sudo rm -rf /opt/1panel
+            
+            sudo cp -r ./1panel /opt
+            
+            sudo 1pctl start
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./panel.zip
+            
+            
+            
+      - name: Restore file
+        run: |
+          
+          echo "复制新文件..."
+          
+          # 使用前面已经安装/缓存好的解压命令
+          sudo cp -r /alist/r2/back/root/  /
+         
   
 
       - name: Install mariadb
@@ -287,96 +380,6 @@ jobs:
           fi
     
     
-      - name: Install Photoprism
-        env:
-          PRISM: ${{ secrets.PRISM }}
-         
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          
-          #sudo curl -L "$PRISM" -o ./prism.zip
-          
-          sudo cp /alist/r2/back/prism.zip ./
-         
-          
-          if [ -s ./prism.zip ]; then
-            echo "prism文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./prism.zip -d ./
-            
-            sudo chmod -R 777 ./photoprism
-            
-            cd ./photoprism/photoprism
-            
-            docker compose up -d
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            
-          fi
-          
-          echo  "Restore Photoprism sql..."
-         
-          docker stop photoprism
-          
-          sudo cp /alist/back/photoprism.sql ./
-          
-          docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
-          
-          docker start photoprism
-          
-          sudo rm -f ./photoprism.sql
-          
-          sudo rm -f ./prism.zip
-
-      
-          
-      - name: Restore 1Panel
-        env:
-         
-          PANEL: ${{ secrets.PANEL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo cp /alist/r2/back/panel.zip ./
-          
-          if [ -s ./panel.zip ]; then
-            echo "panel文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo 1pctl stop 
-            
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
-           
-            sudo chmod -R 777 ./1panel
-           
-            sudo rm -rf /opt/1panel
-            
-            sudo cp -r ./1panel /opt
-            
-            sudo 1pctl start
-            
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
-          
-          sudo rm -f ./panel.zip
-            
-            
-            
-      - name: Restore file
-        run: |
-          
-          echo "复制新文件..."
-          
-          # 使用前面已经安装/缓存好的解压命令
-          sudo cp -r /alist/r2/back/root/  /
             
       - name: Install tailscale
         env:
