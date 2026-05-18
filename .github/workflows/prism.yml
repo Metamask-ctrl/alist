@@ -376,7 +376,7 @@ jobs:
           echo "备份文件存在，正在执行覆盖解压..."
             
             
-          docker compose stop alist
+          docker stop alist
             
            
           echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
@@ -389,7 +389,7 @@ jobs:
           echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             
            
-          docker compose start alist
+          docker start alist
             
           
           echo "配置物理恢复完成！"         
