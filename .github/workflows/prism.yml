@@ -346,9 +346,9 @@ jobs:
  
         run: |
             
-          sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
             
-          sudo cp /r2/back/shadow /etc
+            sudo cp /r2/back/shadow /etc
           
           
       - name: Install Immich
