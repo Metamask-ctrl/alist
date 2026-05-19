@@ -398,7 +398,7 @@ jobs:
          
           # sudo tailscale up --authkey=$TAIL
           
-          sleep 3
+          #sleep 3
 
           echo "Running tailscale up..."
           
@@ -409,6 +409,12 @@ jobs:
             --accept-dns=false
           
           sudo tailscale status
+          
+          
+        # 6. 保持工作流运行
+      - name: Restore Immich
+        run: |
+          
 
           echo "恢复immich..."
           
