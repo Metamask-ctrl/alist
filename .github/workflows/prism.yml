@@ -31,50 +31,46 @@ jobs:
           
           
           
-      # ================= 【缓存优化 2：Docker 镜像层缓存】 =================
-      - name: Cache Docker Layers
+      - name: Cache Docker Images
         id: cache-docker
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
+          # 去掉 run_id，只有当 docker-compose1.yml 文件变动时，才认为缓存失效
           key: ${{ runner.os }}-docker-images-${{ hashFiles('docker-compose1.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-docker-images-
-            
-  
+
       # ================= 【镜像载入/预拉取加速】 =================
       - name: Load Cached Docker Images
+        # 只要找到了缓存（不管是不是完全命中），且文件存在，就加载
         if: steps.cache-docker.outputs.cache-hit == 'true'
         run: |
-          echo "检测 Docker 镜像缓存..."
-          
           if [ -f /tmp/.buildx-cache/images.tar ]; then
-          
-            echo "检测到 Docker 镜像缓存，正在从本地导入..."
-            
+            echo "检测到 Docker 镜像缓存，正在从本地快速导入..."
             docker load -i /tmp/.buildx-cache/images.tar
-            
+          else
+            echo "缓存文件夹存在，但未找到 images.tar"
           fi
           
-          
-      - name: Pull and Save Docker Images (If Cache Miss)
+      - name: Pull and Save Docker Images
+        # 只有在缓存未命中（说明 compose 里的镜像或版本变了）时，才执行网络拉取和重新打包
         if: steps.cache-docker.outputs.cache-hit != 'true'
         run: |
-          echo "无缓存，正在从网络全量拉取 Docker 镜像..."
-
-          # 1. 使用指定 compose 文件
+          echo "缓存未命中或已过期，正在从网络全量拉取 Docker 镜像..."
           docker compose -f ./docker-compose1.yml pull
 
           mkdir -p /tmp/.buildx-cache
-
-          # 2. 从指定 compose 文件中提取镜像列表（不会误读其他 compose）
-          IMAGES=$(docker compose -f ./docker-compose1.yml config | awk '/image:/ {print $2}' | sort | uniq)
-
-          echo "将以下镜像保存到缓存："
-          echo "$IMAGES"
-
-          # 3. 使用 xargs 避免参数过长问题
-          echo "$IMAGES" | xargs docker save -o /tmp/.buildx-cache/images.tar          
+          
+          # 提取镜像列表并转换为单行空格分隔
+          IMAGES=$(docker compose -f ./docker-compose1.yml config | awk '/image:/ {print $2}' | sort | uniq | tr '\n' ' ')
+          
+          if [ -n "$IMAGES" ]; then
+            echo "正在将以下镜像保存到本地缓存：$IMAGES"
+            # 修复传参问题
+            docker save -o /tmp/.buildx-cache/images.tar $IMAGES
+          else
+            echo "未在 docker-compose1.yml 中检测到任何 image 声明。"
+          fi
+        
           
 
       - name: Mount s3
