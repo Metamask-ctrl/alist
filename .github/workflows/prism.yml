@@ -277,7 +277,7 @@ jobs:
           
           cd /opt/1panel/apps/photoprism/photoprism
           
-          sudo mv .env.txt .env
+          #sudo mv .env.txt .env
           
           if [ -s ./docker-compose.yml ]; then
             echo "prism文件下载成功，正在执行覆盖解压..."
