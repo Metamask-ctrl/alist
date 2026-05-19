@@ -70,7 +70,6 @@ jobs:
           sudo rm -f ./rclone.conf
 
 
-
       # ================= 【缓存优化 2：Docker 镜像层缓存】 =================
       - name: Cache Docker Layers
         id: cache-docker
@@ -91,116 +90,134 @@ jobs:
             docker load -i /tmp/.buildx-cache/images.tar
           fi
           
-      - name: Reatore lucky
+          
+
+      - name: Pull and Save Docker Images (If Cache Miss)
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          echo "无缓存，正在从网络全量拉取 Docker 镜像..."
+          
+          docker compose pull
+          mkdir -p /tmp/.buildx-cache
+          # 将拉取下来的所有大镜像打包归档到缓存目录中
+          docker save $(docker compose config | grep 'image:' | awk '{print $2}' | sort | uniq) -o /tmp/.buildx-cache/images.tar
+
+      # 3. 启动所有 Docker 容器
+      - name: Start Services and Cloudflare Tunnel
         env:
-          LUCKY: ${{ secrets.LUCKY }}
+          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+         
+          
+          docker compose up -d
+          echo "正在等待所有服务完成基础初始化..."
+          #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
+
+
+      # 4. 下载物理 data.zip 备份并无损解压还原
+      - name: Restore alist
+        env:
+          #DATA_URL: ${{ secrets.DATA_URL }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
+
+          
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          curl -L "$LUCKY" -o ./lucky.zip
-          mkdir -p  ./lucky 
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
+          
+          if [ -s ./data.zip ]; then
+            echo "备份文件下载成功，正在执行覆盖解压..."
+            
+            
+            docker stop alist
+            
+           
+            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
+            sudo rm -rf ./alist-data
+            #sudo mkdir -p ./alist-data
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./data.zip -d ./
+            
+            
+            sudo chmod -R 777 ./alist-data
+            
+            
+            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+           
+            docker start alist
+            
+            echo "6. 强制同步最终登录管理员密码..."
+            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
+            echo "配置物理恢复完成！"         
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+         
+          sudo rm -f ./data.zip
+
+
+      - name: Enable SSHD and set root password
+        run: |
+          export MY_VAR=$(cat /r2/back/tmp)
+          echo "root:$MY_VAR" | sudo chpasswd
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+          
+       
+      - name: Mount alist
+        #env:
+          #RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+            
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+  
+          
+      - name: Reatore lucky
+        env:
+          #LUCKY: ${{ secrets.LUCKY }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          #curl -L "$LUCKY" -o ./lucky.zip
+          
+          sudo cp /r2/back/lucky.zip ./
+          
           
           if [ -s ./lucky.zip ]; then
             echo "lucky文件下载成功，正在执行覆盖解压..."
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./lucky.zip -d ./lucky
+            sudo unzip -P "$DATA_PASS" ./lucky.zip -d ./
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
+        
           fi
           rm -f ./lucky.zip
+          
 
       - name: Install 1Panel
         run: |
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
- 
- 
-      - name: Install mariadb
-        env:
-         
-          MYSQL: ${{ secrets.MYSQL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$MYSQL" -o ./mysql.zip
           
-          if [ -s ./mysql.zip ]; then
-            echo "mysql文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./mysql.zip -d ./
-           
-            sudo chmod -R 777 ./mariadb
-           
-            cd ./mariadb/mariadb
-            
-            docker compose up -d
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
-          
-          sudo rm -f ./mysql.zip
-
- 
-      - name: Install Photoprism
-        env:
-          PRISM: ${{ secrets.PRISM }}
-         
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          
-          #sudo curl -L "$PRISM" -o ./prism.zip
-          
-          sudo cp /r2/back/prism.zip ./
-         
-          
-          if [ -s ./prism.zip ]; then
-            echo "prism文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./prism.zip -d ./
-            
-            sudo chmod -R 777 ./photoprism
-            
-            cd ./photoprism/photoprism
-            
-            docker compose up -d
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            
-          fi
-          
-          echo  "Restore Photoprism sql..."
-         
-          #docker stop photoprism
-          
-          #sudo cp /r2/back/photoprism.sql ./
-          
-          #docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
-          
-          #docker start photoprism
-          
-          #sudo rm -f ./photoprism.sql
-          
-          sudo rm -f ./prism.zip
-
       
           
       - name: Restore 1Panel
         env:
-         
-          PANEL: ${{ secrets.PANEL }}
+          #PANEL: ${{ secrets.PANEL }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
+          
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -229,8 +246,107 @@ jobs:
           fi  
           
           sudo rm -f ./panel.zip
+          
+          
+          
+      - name: Install mariadb
+        #env:
+          #MYSQL: ${{ secrets.MYSQL }}
+          #DATA_PASS: ${{ secrets.DATA_PASS }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          cd /opt/1panel/apps/mariadb/mariadb1
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
             
+            docker compose up -d
             
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+
+            
+ 
+
+      - name: Install Photoprism
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          cd /opt/1panel/apps/photoprism/photoprism
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          echo  "Restore Photoprism sql..."
+         
+          #docker stop photoprism
+          
+          #sudo cp /r2/back/photoprism.sql ./
+          
+          #docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
+          
+          #docker start photoprism
+          
+          #sudo rm -f ./photoprism.sql
+          
+          #sudo rm -f ./prism.zip
+          
+ 
+      - name: Install meilisearch
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+        
+          
+          cd /opt/1panel/apps/meilisearch/meilisearch
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+ 
+ 
+      - name: Install rustdesk
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+        
+          
+          cd /opt/1panel/apps/rustdesk/rustdesk
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+ 
+ 
             
       - name: Restore file
         run: |
@@ -243,95 +359,11 @@ jobs:
           #sudo cp /r2/back/shadow /etc
           
           #sudo awk -v newroot="$(cat /r2/back/shadow)" 'BEGIN{FS=OFS=":"}$1=="root"{print newroot;next}{print}' /etc/shadow | sudo tee /etc/shadow >/dev/null
-         
-
-          
-
-      - name: Pull and Save Docker Images (If Cache Miss)
-        if: steps.cache-docker.outputs.cache-hit != 'true'
-        run: |
-          echo "无缓存，正在从网络全量拉取 Docker 镜像..."
-          
-          docker compose pull
-          mkdir -p /tmp/.buildx-cache
-          # 将拉取下来的所有大镜像打包归档到缓存目录中
-          docker save $(docker compose config | grep 'image:' | awk '{print $2}' | sort | uniq) -o /tmp/.buildx-cache/images.tar
-
-      # 3. 启动所有 Docker 容器
-      - name: Start Services and Cloudflare Tunnel
-        env:
-          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-        run: |
-         
-          
-          docker compose up -d
-          echo "正在等待所有服务完成基础初始化..."
-          #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
-
-
-      # 4. 下载物理 data.zip 备份并无损解压还原
-      - name: Restore alist
-        env:
-          DATA_URL: ${{ secrets.DATA_URL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-  
-          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-          
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$DATA_URL" -o ./data.zip
-          sudo cp /r2/back/data.zip ./
-          
-          if [ -s ./data.zip ]; then
-            echo "备份文件下载成功，正在执行覆盖解压..."
-            
-            
-            docker compose stop alist
-            
-           
-            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-            sudo rm -rf ./alist-data
-            #sudo mkdir -p ./alist-data
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d ./
-            
-            
-            sudo chmod -R 777 ./alist-data
-            
-            
-            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
-            
-           
-            docker compose start alist
-            
-            echo "6. 强制同步最终登录管理员密码..."
-            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
-            echo "配置物理恢复完成！"         
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi
-          
-         
-          sudo rm -f ./data.zip
-
-
-      - name: Enable SSHD and set root password
-        run: |
-          export MY_VAR=$(cat /r2/back/tmp)
-          echo "root:$MY_VAR" | sudo chpasswd
-          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-          sudo systemctl restart ssh
+                   
+       
+      
 
       - name: Configure 1Panel admin
-        env:
-          USER: ${{ secrets.PANELUSER }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-          
         run: |
         
           #sudo 1pctl user-info
@@ -342,21 +374,11 @@ jobs:
           
           #echo "20333" | sudo 1pctl update port
           
-      - name: Mount alist
-        env:
-         
-          RCLONECONF: ${{ secrets.RCLONECONF }}
- 
-        run: |
-            
-            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
-             
+  
           
       - name: Install Immich
         env:
-          IMMICH: ${{ secrets.IMMICH }}
-         
+
           DATA_PASS: ${{ secrets.DATA_PASS }}
           
         run: |
@@ -364,8 +386,11 @@ jobs:
           
           sudo mkdir -p /immich
           
-          sudo curl -L "$IMMICH" -o ./immich.zip
+          #sudo curl -L "$IMMICH" -o ./immich.zip
+          
          
+          sudo cp /r2/back/immich-app.zip ./immich.zip
+          
           
           if [ -s ./immich.zip ]; then
             echo "immich文件下载成功，正在执行覆盖解压..."
