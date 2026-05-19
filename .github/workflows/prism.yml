@@ -19,7 +19,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-rclone-fuse3
+          key: ${{ runner.os }}-apt-rclone-fuse3-expect
 
       - name: Install Dependencies (unzip, rclone, fuse3)
         run: |
@@ -119,18 +119,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-images-${{ hashFiles('docker-compose.yml') }}
+          key: ${{ runner.os }}-docker-images-${{ hashFiles('docker-compose1.yml') }}
           restore-keys: |
             ${{ runner.os }}-docker-images-
-
+            
   
       # ================= 【镜像载入/预拉取加速】 =================
       - name: Load Cached Docker Images
         if: steps.cache-docker.outputs.cache-hit == 'true'
         run: |
-          echo "检测到 Docker 镜像缓存，正在从本地导入..."
+          echo "检测 Docker 镜像缓存..."
+          
           if [ -f /tmp/.buildx-cache/images.tar ]; then
+          
+            echo "检测到 Docker 镜像缓存，正在从本地导入..."
+            
             docker load -i /tmp/.buildx-cache/images.tar
+            
           fi
           
           
@@ -140,7 +145,7 @@ jobs:
         run: |
           echo "无缓存，正在从网络全量拉取 Docker 镜像..."
           
-          docker compose pull
+          docker compose -f ./docker-compose1.yml pull
           mkdir -p /tmp/.buildx-cache
           # 将拉取下来的所有大镜像打包归档到缓存目录中
           docker save $(docker compose config | grep 'image:' | awk '{print $2}' | sort | uniq) -o /tmp/.buildx-cache/images.tar
@@ -154,6 +159,7 @@ jobs:
          
           
           docker compose up -d
+          
           echo "正在等待所有服务完成基础初始化..."
           #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
