@@ -1,0 +1,85 @@
+
+name: Cache Image
+
+on:
+  #schedule:
+    #- cron: "0 10 * * *"
+  workflow_dispatch: # 支持手动点击触发
+
+jobs:
+  run-service:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ================= 【缓存优化 1：APT 包管理器缓存】 =================
+      - name: Cache APT Packages
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-rclone-fuse3-expect
+
+      - name: Install Dependencies (unzip, rclone, fuse3)
+        run: |
+          sudo apt-get update
+          # 如果缓存命中了，apt 会直接从本地归档目录极速安装，不再走公网下载
+          sudo apt-get install -y unzip rclone fuse3 expect
+          
+          #sudo mkdir -p /alist
+          
+          
+          
+      - name: Cache Docker Images
+        id: cache-docker
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          # 使用固定 key 强行排查
+          key: ${{ runner.os }}-docker-images-debug-v2
+
+      # ================= 【镜像载入/预拉取加速】 =================
+      - name: Load Cached Docker Images
+        # 【核心修改 1】直接在 GitHub Actions 级别用 if 判断，不要塞进 shell 内部
+        if: steps.cache-docker.outputs.cache-hit == 'true'
+        run: |
+          echo "=== 缓存完全命中！开始载入 ==="
+          if [ -f /tmp/.buildx-cache/images.tar ]; then
+            docker load -i /tmp/.buildx-cache/images.tar
+          else
+            echo "错误：缓存命中了，但没找到 tar 包文件！"
+          fi
+          
+      - name: Pull and Save Docker Images
+        # 【核心修改 2】通过 env 把 GitHub 变量安全的送进 Shell
+        env:
+          MY_CACHE_HIT: ${{ steps.cache-docker.outputs.cache-hit }}
+        run: |
+          echo "=== 运行期状态调试 ==="
+          echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
+          
+          echo "正在同步 Docker 镜像..."
+          docker compose -f ./docker-compose1.yml pull
+
+          # 如果没有命中缓存，则必须重新打包
+          if [ "$MY_CACHE_HIT" != "true" ]; then
+            echo "=== 缓存未命中，强制生成本地打包 ==="
+            mkdir -p /tmp/.buildx-cache
+            
+            IMAGES=$(docker compose -f ./docker-compose1.yml config | awk '/image:/ {print $2}' | sort | uniq | tr '\n' ' ')
+            
+            if [ -n "$IMAGES" ]; then
+              echo "打包目标镜像: $IMAGES"
+              docker save -o /tmp/.buildx-cache/images.tar $IMAGES
+              echo "打包完成，检查文件大小："
+              ls -lh /tmp/.buildx-cache/images.tar
+            else
+              echo "未找到任何镜像"
+            fi
+          else
+            echo "缓存已命中，跳过重新打包流程。"
+          fi
+
+          
