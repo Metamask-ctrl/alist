@@ -270,7 +270,41 @@ jobs:
           fi
 
             
+ 
 
+      - name: Install Photoprism
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          cd /opt/1panel/apps/photoprism/photoprism
+          
+          #sudo mv .env.txt .env
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          echo  "Restore Photoprism sql..."
+         
+          #docker stop photoprism
+          
+          #sudo cp /r2/back/photoprism.sql ./
+          
+          #docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
+          
+          #docker start photoprism
+          
+          #sudo rm -f ./photoprism.sql
+          
+          #sudo rm -f ./prism.zip
           
  
       - name: Install meilisearch
