@@ -384,38 +384,21 @@ jobs:
           
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
+ 
           
-          sudo mkdir -p /immich
-          
-          #sudo curl -L "$IMMICH" -o ./immich.zip
-          
-         
-          sudo cp /r2/back/immich-app.zip ./immich.zip
+          cd /opt/1panel/apps/immich-app 
           
           
-          if [ -s ./immich.zip ]; then
-            echo "immich文件下载成功，正在执行覆盖解压..."
+          if [ -s ./docker-compose.yml ]; then
+            echo "Immich文件下载成功，正在执行覆盖解压..."
             
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./immich.zip -d ./
-           
-            sudo rm -f ./immich.zip
-         
-            sudo chmod -R 777 ./immich-app
-            
-           # sudo cp -r ./immich-app /root
-            
-            cd ./immich-app
-            
-            docker compose pull
             docker compose up -d
-            
-            
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             
           fi
+
     
     
             
@@ -448,6 +431,12 @@ jobs:
             --accept-dns=false
           
           sudo tailscale status
+
+
+      # 6. 保持工作流运行
+      - name: Restore Immich sql
+        run: |
+        
 
           echo "恢复immich..."
           
