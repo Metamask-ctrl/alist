@@ -113,8 +113,6 @@ services:
     image: getmeili/meilisearch:v1.44.0
     labels:
       createdBy: Apps
-    networks:
-      - host
 
     restart: always
 
@@ -125,8 +123,6 @@ services:
     image: photoprism/photoprism:251130-ce
     labels:
       createdBy: Apps
-    networks:
-      - host
 
     restart: always
 
@@ -137,8 +133,6 @@ services:
     image: rustdesk/rustdesk-server-s6:latest
     labels:
       createdBy: Apps
-    networks:
-      - 1panel-network
 
     restart: always
 
