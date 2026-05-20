@@ -807,7 +807,7 @@ jobs:
           START_TIME=$REAL_START_TIME
           CURRENT_TIME=$(date +%s)
           ELAPSED=$((CURRENT_TIME - START_TIME))
-          TARGET_WAIT=180 # 3分钟 = 180秒
+          TARGET_WAIT=100 # 3分钟 = 180秒
           
           if [ $ELAPSED -lt $TARGET_WAIT ]; then
             WAIT_TIME=$((TARGET_WAIT - ELAPSED))
