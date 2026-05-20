@@ -766,6 +766,26 @@ jobs:
           # sudo tailscale up --authkey=$TAIL
           #sleep 3
 
+
+          # 获取系统启动时间戳（即 GitHub 运行器开始执行当前 Job 的时间）
+          START_TIME=$(date -d "$(uptime -s)" +%s)
+          CURRENT_TIME=$(date +%s)
+          ELAPSED=$((CURRENT_TIME - START_TIME))
+          TARGET_WAIT=180 # 3分钟 = 180秒
+          
+          if [ $ELAPSED -lt $TARGET_WAIT ]; then
+            WAIT_TIME=$((TARGET_WAIT - ELAPSED))
+            echo "⏰ 任务已运行了 ${ELAPSED} 秒，未满 3 分钟。"
+            echo "⏳ 还需要原地等待 ${WAIT_TIME} 秒..."
+            echo "=================================================="
+            sleep $WAIT_TIME
+          else
+            echo "✅ 任务从开始到现在已过去 ${ELAPSED} 秒（已超 3 分钟），无需等待，直接执行！"
+            echo "=================================================="
+          fi
+          
+
+
           echo "Running tailscale up..."
           
           docker start cloudflared-tunnel
@@ -795,6 +815,26 @@ jobs:
          
           # sudo tailscale up --authkey=$TAIL
           #sleep 3
+          
+          
+          # 获取系统启动时间戳（即 GitHub 运行器开始执行当前 Job 的时间）
+          START_TIME=$(date -d "$(uptime -s)" +%s)
+          CURRENT_TIME=$(date +%s)
+          ELAPSED=$((CURRENT_TIME - START_TIME))
+          TARGET_WAIT=180 # 3分钟 = 180秒
+          
+          if [ $ELAPSED -lt $TARGET_WAIT ]; then
+            WAIT_TIME=$((TARGET_WAIT - ELAPSED))
+            echo "⏰ 任务已运行了 ${ELAPSED} 秒，未满 3 分钟。"
+            echo "⏳ 还需要原地等待 ${WAIT_TIME} 秒..."
+            echo "=================================================="
+            sleep $WAIT_TIME
+          else
+            echo "✅ 任务从开始到现在已过去 ${ELAPSED} 秒（已超 3 分钟），无需等待，直接执行！"
+            echo "=================================================="
+          fi
+          
+          
 
           echo "Running tailscale up..."
           
@@ -873,7 +913,7 @@ jobs:
                 exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
               fi
               
-              sleep 115
+              sleep 180
 
               break
             fi
