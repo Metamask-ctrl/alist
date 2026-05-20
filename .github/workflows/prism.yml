@@ -249,6 +249,10 @@ jobs:
           
           docker compose up -d
           
+          sleep 2 
+          
+          docker stop cloudflared-tunnel
+          
           echo "正在等待所有服务完成基础初始化..."
           #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
@@ -478,6 +482,7 @@ jobs:
           TAIL: ${{ secrets.TAIL }}
  
         run: |
+        
           echo "正在从远程 URL 安装Tailscale..."
           sudo mkdir -p /var/lib/tailscale
           
@@ -493,6 +498,9 @@ jobs:
           #sleep 3
 
           echo "Running tailscale up..."
+          
+          docker start cloudflared-tunnel
+          
           
           sudo tailscale up \
             --authkey=${{ secrets.TAIL }} \
@@ -572,7 +580,7 @@ jobs:
                 cat response.json
                 exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
               fi
-              sleep 30
+              sleep 90
 
               break
             fi
