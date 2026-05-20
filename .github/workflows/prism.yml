@@ -4,7 +4,7 @@ on:
   #schedule:
     #- cron: "5 16 * * *"
   repository_dispatch:
-    types: [Metamask_trigger]
+    types: [mksha_trigger]
     
   workflow_dispatch: # 支持手动点击触发
 
@@ -13,9 +13,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+    
+      # 1. 签出仓库 B
+      - name: Checkout Repo B
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # 记得去 Settings 开启 Read and write permissions
+    
+      # 【核心安全机制】判断当前运行的仓库是否为主仓库
+      - name: Check Repository Identity
+        run: |
+          echo "当前运行的仓库是: ${{ github.repository }}"
+          
+          if [ "${{ github.repository }}" = "Metamask-ctrl/alist" ]; then
+            echo "=================================================="
+            echo "🛡️ 安全防御：检测到当前正是【主仓库本身】，无需执行同步！"
+            echo "正在安全退出..."
+            echo "=================================================="
+            
+            
+          else
+            echo "=================================================="
+            echo "🎯 确认身份：当前为【B 仓库】，允许执行同步流程。"
+            echo "=================================================="
+        
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+            # 1. 绑定主仓库作为上游
+            git remote add upstream https://github.com/Metamask-ctrl/alist.git
+          
+            # 2. 拉取主仓库代码
+            git fetch upstream
+          
+            # 3. 强制覆盖本地 main    分支
+            git checkout main
+            git reset --hard upstream/main
+          
+            # 4. 推送到自己的仓库 B
+            git push origin main --force
+          
+            echo "=================================================="
+            echo "🎉 同步圆满成功！"
+            echo "=================================================="          
+          fi
 
+          
       # ================= 【缓存优化 1：APT 包管理器缓存】 =================
       - name: Cache APT Packages
         id: cache-apt
@@ -23,6 +67,9 @@ jobs:
         with:
           path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-rclone-fuse3-expect
+          
+        
+          
 
       - name: Install Dependencies (unzip, rclone, fuse3)
         run: |
