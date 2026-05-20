@@ -406,7 +406,6 @@ jobs:
             
           #docker restart immich_server
                    
-          
       # 6. 保持工作流运行
       - name: Keep Workflow Alive
         env:
@@ -417,42 +416,27 @@ jobs:
           echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
           echo "=================================================="
           
-          # 设置两个目标时间点（UTC 时间）
-          TIME_A="10:23"
-          TIME_B="22:23"
+          # 1. 设置时间（5小时55分钟 = 21300秒）
+          DURATION=21300 
           
-          CURRENT_TIMESTAMP=$(date -u +%s)
-          TODAY=$(date -u +%Y-%m-%d)
-          TOMORROW=$(date -u -d 'tomorrow' +%Y-%m-%d)
-
-          # 1. 计算今天和明天的这几个时间点的时间戳
-          TS_A_TODAY=$(date -u -d "$TODAY $TIME_A" +%s)
-          TS_B_TODAY=$(date -u -d "$TODAY $TIME_B" +%s)
-          TS_A_TOMORROW=$(date -u -d "$TOMORROW $TIME_A" +%s)
-          TS_B_TOMORROW=$(date -u -d "$TOMORROW $TIME_B" +%s)
-
-          # 2. 找出所有【未来】的时间点，并挑出最近的一个
-          TARGET_TIMESTAMP=0
-          for ts in $TS_A_TODAY $TS_B_TODAY $TS_A_TOMORROW $TS_B_TOMORROW; do
-            if [ $ts -gt $CURRENT_TIMESTAMP ]; then
-              TARGET_TIMESTAMP=$ts
-              break
-            fi
-          done
-
-          echo "当前系统时间 (UTC): $(date -u '+%Y-%m-%d %H:%M:%S')"
-          echo "判定成功！工作流将在最近的下一个目标时间 $(date -u -d @$TARGET_TIMESTAMP '+%Y-%m-%d %H:%M:%S') 结束运行并触发 API。"
+          START_TIME=$(date -u +%s)
+          END_TIME=$((START_TIME + DURATION))
+          
+          echo "工作流启动时间 (UTC): $(date -u -d @$START_TIME '+%Y-%m-%d %H:%M:%S')"
+          
+          echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')"
+          echo "=================================================="
 
           while true; do
-            CURRENT_TIMESTAMP=$(date -u +%s)
+            CURRENT_TIME=$(date -u +%s)
             
-            # 如果时间到了，执行触发并退出
-            if [ $CURRENT_TIMESTAMP -ge $TARGET_TIMESTAMP ]; then
+            # 如果当前时间超过或等于预计结束时间，则退出循环
+            if [ $CURRENT_TIME -ge $END_TIME ]; then
               echo "=================================================="
-              echo "已达到指定时间点，正在尝试通过 API 触发下一阶段..."
+              echo "即将退出..."
               echo "=================================================="
               
-              # 【核心修改】：通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
+              # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
               HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer $TOKEN" \
@@ -462,7 +446,7 @@ jobs:
 
               echo "GitHub API 响应状态码: $HTTP_STATUS"
               
-              # GitHub Repository Dispatch 成功的标准状态码是 204 No Content
+              # GitHub 触发成功的标准状态码是 204
               if [ "$HTTP_STATUS" -eq 204 ]; then
                 echo "=================================================="
                 echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
@@ -480,5 +464,5 @@ jobs:
               break
             fi
             
-            sleep 60
+            sleep 30
           done
