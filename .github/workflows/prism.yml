@@ -867,6 +867,8 @@ jobs:
           
           echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')"
           
+          sudo cp /r2/back/a.sh /opt/1panel
+          
           sudo chmod 777 /opt/1panel/a.sh
           
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')")"
@@ -910,7 +912,7 @@ jobs:
                 cat response.json
                # 触发失败时，强行中断并让当前 Action 报错显红
                
-                sleep 10
+                sleep 30
                
                 curl -s -o response.json -w "%{http_code}" -X POST \
                 -H "Accept: application/vnd.github+json" \
