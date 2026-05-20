@@ -952,3 +952,22 @@ jobs:
             
             sleep 30
           done
+          
+          
+       # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
+      - name: Auto Backup on Cancel
+        if: cancelled() # 关键所在：只有被取消时才执行
+        run: |
+          echo "检测到工作流被取消，正在紧急执行备份..."
+          
+          # 获取当前北京时间作为备份标签
+          BACKUP_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d_%H%M%S')
+          echo "备份触发时间: $BACKUP_TIME"
+          
+          # 执行你的备份脚本（传入你前面测试过的北京时间参数）
+          # 注意：请确保 /r2/back/ 等路径或依赖在 Runner 中是存在的，或者改用你的实际备份命令
+          
+          sudo bash /opt/1panel/task/all.sh
+          
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流取消备份时间: $BACKUP_TIME"
+          
