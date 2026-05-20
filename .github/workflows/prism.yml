@@ -798,6 +798,7 @@ jobs:
 
 
       - name: Delay start tailscale
+        id: Delay_start
         run: |
 
           echo "🔍 正在计算从【任务真正开始】至今的时间..."
@@ -956,7 +957,8 @@ jobs:
           
        # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
       - name: Auto Backup on Cancel
-        if: cancelled() # 关键所在：只有被取消时才执行
+        if: cancelled() && steps.Delay_start.outcome == 'success'
+        
         run: |
           echo "检测到工作流被取消，正在紧急执行备份..."
           
