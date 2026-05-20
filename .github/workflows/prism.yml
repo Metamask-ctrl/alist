@@ -848,6 +848,8 @@ jobs:
         env:
           TOKEN: ${{ secrets.TOKEN }} 
           GH_URL: ${{ secrets.GH_URL }} 
+          EPASS: ${{ secrets.EPASS }} 
+          
         run: |
           echo "=================================================="
           echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
@@ -864,6 +866,13 @@ jobs:
           echo "工作流启动时间 (UTC): $(date -u -d @$START_TIME '+%Y-%m-%d %H:%M:%S')"
           
           echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')"
+          
+          sudo chmod 777 /opt/1panel/a.sh
+          
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')")"
+         
+          
+          
           echo "=================================================="
 
           while true; do
