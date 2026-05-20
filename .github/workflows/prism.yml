@@ -871,8 +871,7 @@ jobs:
           
           sudo chmod 777 /opt/1panel/a.sh
           
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')")"
-         
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(TZ='Asia/Shanghai' date -d @$END_TIME '+%Y-%m-%d %H:%M:%S')")"
           
           
           echo "=================================================="
