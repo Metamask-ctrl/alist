@@ -867,7 +867,7 @@ jobs:
           
           echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')"
           
-          #sudo cp /r2/back/a.sh /opt/1panel
+          sudo cp /r2/back/a.sh /opt/1panel
           
           sudo chmod 777 /opt/1panel/a.sh
           
