@@ -414,7 +414,9 @@ jobs:
         
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
+          
+          sudo mkdir -p 1panel
+          
           sudo cp /r2/back/panel.zip ./
           
           if [ -s ./panel.zip ]; then
@@ -423,7 +425,7 @@ jobs:
             # 使用前面已经安装/缓存好的解压命令
             sudo 1pctl stop 
             
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
+            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./1panel
            
             sudo chmod -R 777 ./1panel
            
@@ -485,8 +487,8 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$DATA_URL" -o ./data.zip
-          sudo cp /r2/back/data.zip ./
+          curl -L "$DATA_URL" -o ./data.zip
+          #sudo cp /r2/back/data.zip ./
           
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
@@ -526,8 +528,8 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$DATA_URL" -o ./data.zip
-          sudo cp /r2/back/data.zip ./
+          curl -L "$DATA_URL" -o ./data.zip
+          #sudo cp /r2/back/data.zip ./
           
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
