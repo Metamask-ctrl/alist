@@ -2,7 +2,14 @@ name: Run prism555
 
 permissions:
   actions: write 
-  
+env:
+  TOKEN: ${{ secrets.SYNCTOKEN }} 
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DATA_PASS: ${{ secrets.DATA_PASS }}      
+          
+  GH_URL: ${{ secrets.GH_URL }} 
+  EPASS: ${{ secrets.EPASS }} 
+          
 on:
   #schedule:
     #- cron: "5 16 * * *"
@@ -32,11 +39,7 @@ jobs:
     
       # 【核心安全机制】判断当前运行的仓库是否为主仓库
       - name: Check and Sync Repository
-        env:
-          TOKEN: ${{ secrets.SYNCTOKEN }} 
-          
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+      
         run: |
           echo "当前运行的仓库是: ${{ github.repository }}"
           
@@ -313,9 +316,7 @@ jobs:
       - name: Restore 1Panel
         id: step_restore_1panel
         continue-on-error: true
-        env:
-          #PANEL: ${{ secrets.PANEL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
+        
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -348,9 +349,6 @@ jobs:
       # === 恢复 1Panel（重试步骤，仅在失败时触发） ===
       - name: Restore 1Panel - Retry
         if: steps.step_restore_1panel.outcome == 'failure'
-        env:
-          #PANEL: ${{ secrets.PANEL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -858,18 +856,13 @@ jobs:
       - name: Keep Workflow Alive
         id: Keep_start
         continue-on-error: true
-        env:
-          TOKEN: ${{ secrets.TOKEN }} 
-          GH_URL: ${{ secrets.GH_URL }} 
-          EPASS: ${{ secrets.EPASS }} 
-          
         run: |
           echo "=================================================="
           echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
           echo "=================================================="
           
           # 1. 设置时间（5小时30分钟 = 19800）
-          DURATION=19800 
+          DURATION=300 
           
           #DURATION=300 
           
