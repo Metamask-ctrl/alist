@@ -844,7 +844,7 @@ jobs:
         
         run: |
         
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。")"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
           
           exit 1
 
@@ -867,7 +867,7 @@ jobs:
           echo "=================================================="
           
           # 1. 设置时间（5小时30分钟 = 19800）
-          DURATION=110
+          DURATION=19800
           
           #DURATION=300 
           
@@ -882,7 +882,7 @@ jobs:
           
           sudo chmod 777 /opt/1panel/a.sh
           
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(TZ='Asia/Shanghai' date -d @$END_TIME '+%Y-%m-%d %H:%M:%S')")"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(TZ='Asia/Shanghai' date -d @$END_TIME '+%Y-%m-%d %H:%M:%S')，${{ github.repository }}")"
           
           
           echo "=================================================="
@@ -909,7 +909,7 @@ jobs:
         
         run: |
         
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。")"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
           
         
       # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
@@ -933,7 +933,7 @@ jobs:
             echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
             
           
-            sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！")"
+            sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！${{ github.repository }}")"
             
                 
             echo "=================================================="
@@ -960,13 +960,13 @@ jobs:
                 
               echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！" 
                   
-              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！")"
+              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！${{ github.repository }}")"
                   
             else 
                 
               echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
                   
-              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。")"
+              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。${{ github.repository }}")"
   
                 
             fi
@@ -993,5 +993,5 @@ jobs:
           
           sudo bash /opt/1panel/task/all.sh
           
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流取消备份时间: $BACKUP_TIME"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流取消备份时间: $BACKUP_TIME，${{ github.repository }}"
           
