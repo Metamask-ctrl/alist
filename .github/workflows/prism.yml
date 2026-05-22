@@ -505,13 +505,13 @@ jobs:
             docker stop alist
             
             echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-            sudo rm -rf ./alist-data
-            #sudo mkdir -p ./alist-data
+            sudo rm -rf /home/alist-data
+            #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d ./
+            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
             
-            sudo chmod -R 777 ./alist-data
+            sudo chmod -R 777 /home/alist-data
             
             echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             
@@ -536,7 +536,7 @@ jobs:
           #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           #curl -L "$DATA_URL" -o ./data.zip
           sudo cp /r2/back/data.zip ./
           
@@ -546,13 +546,13 @@ jobs:
             docker stop alist
             
             echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-            sudo rm -rf ./alist-data
-            #sudo mkdir -p ./alist-data
+            sudo rm -rf /home/alist-data
+            #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d ./
+            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
             
-            sudo chmod -R 777 ./alist-data
+            sudo chmod -R 777 /home/alist-data
             
             echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             

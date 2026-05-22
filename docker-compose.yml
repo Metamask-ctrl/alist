@@ -6,7 +6,7 @@ services:
     ports:
       - "5244:5244"
     volumes:
-      - ./alist-data:/opt/alist/data
+      - /home/alist-data:/opt/alist/data
       - /:/aaa
     environment:
       - PUID=0
