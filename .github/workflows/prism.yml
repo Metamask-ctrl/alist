@@ -441,6 +441,10 @@ jobs:
             exit 1
           fi  
           
+          sudo cp /r2/back/a.sh /opt/1panel
+          
+          sudo chmod 777 /opt/1panel/a.sh
+          
           sudo rm -f ./panel.zip
 
       # === 恢复 1Panel（重试步骤，仅在失败时触发） ===
@@ -472,6 +476,11 @@ jobs:
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
           fi  
+          
+                    
+          sudo cp /r2/back/a.sh /opt/1panel
+          
+          sudo chmod 777 /opt/1panel/a.sh
           
           sudo rm -f ./panel.zip
 
@@ -819,9 +828,6 @@ jobs:
           
           echo "预计结束时间 (UTC): $(date -u -d @$END_TIME '+%Y-%m-%d %H:%M:%S')"
           
-          sudo cp /r2/back/a.sh /opt/1panel
-          
-          sudo chmod 777 /opt/1panel/a.sh
           
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "预计结束时间 (UTC): $(TZ='Asia/Shanghai' date -d @$END_TIME '+%Y-%m-%d %H:%M:%S')，${{ github.repository }}")"
           
