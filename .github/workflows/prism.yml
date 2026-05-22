@@ -641,6 +641,8 @@ jobs:
       # === 批量自动启动（重试步骤，仅在失败时触发） ===
       - name: Auto Discover and Install 1Panel Apps - Retry
         if: steps.step_auto_apps.outcome == 'failure'
+        id: step_auto_apps_retry
+        continue-on-error: true
         run: |
           echo "=================================================="
           echo "⚠️ 正在执行 1Panel 应用批量启动重试..."
@@ -654,6 +656,16 @@ jobs:
             fi
           done
 
+      # === 批量自动启动（重试步骤，仅在失败时触发） ===
+      - name: Send notification - Retry
+        if: steps.step_auto_apps_retry.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          echo "=================================================="
+          echo "⚠️ 正在执行 1Panel 应用批量启动重试..."
+          echo "=================================================="
+          
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【Apps】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
 
  
  
