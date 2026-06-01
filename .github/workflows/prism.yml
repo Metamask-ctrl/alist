@@ -36,10 +36,18 @@ jobs:
           #df -h
     
           # 删除不需要的系统软件和工具链
+          # 5gb
           sudo rm -rf /usr/share/dotnet
+          
+          # 10g
           sudo rm -rf /usr/local/lib/android
+          
           sudo rm -rf /opt/ghc
+          
+          
           sudo rm -rf /usr/local/share/boost
+          
+          # 6gb
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     
           # 彻底清理 Docker 缓存和残留镜像
@@ -971,9 +979,7 @@ jobs:
           echo "=================================================="
           sudo ip addr add 192.168.5.1/24 dev eth0
           
-          docker system prune -a -f --volumes
-          
-          sudo apt autoclean
+      
 
           while true; do
             CURRENT_TIME=$(date -u +%s)
