@@ -29,6 +29,29 @@ jobs:
 
     steps:
     
+    
+      - name: Cleanup Disk Space (Free up to 30GB+)
+        run: |
+          echo "=== Before Cleanup ==="
+          #df -h
+    
+          # 删除不需要的系统软件和工具链
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    
+          # 彻底清理 Docker 缓存和残留镜像
+          docker system prune -a -f --volumes
+    
+          echo "=== After Cleanup ==="
+          df -h
+
+    
+    
+    
+    
       # 🌟 新增这一步：捕获真正的任务开始时间，并写入全局环境变量
       - name: Record Real Start Time
         run: |
