@@ -54,7 +54,7 @@ jobs:
           docker system prune -a -f --volumes
     
           echo "=== After Cleanup ==="
-          df -h
+          #df -h
 
     
     
