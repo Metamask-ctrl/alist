@@ -436,7 +436,92 @@ jobs:
           
           sudo rm -f ./rclone.conf
           
+ 
+      # 4. 下载物理 data.zip 备份并无损解压还原（原步骤）
+      - name: Restore alist
+        id: step_restore_alist
+        continue-on-error: true
+        env:
+          #DATA_URL: ${{ secrets.DATA_URL }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+        run: |
+          sleep 2
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
           
+          if [ -s ./data.zip ]; then
+            echo "备份文件下载成功，正在执行覆盖解压..."
+            
+            docker stop alist
+            
+            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
+            sudo rm -rf /home/alist-data
+            #sudo mkdir -p /home/alist-data
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
+            
+            sudo chmod -R 777 /home/alist-data
+            
+            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+            docker start alist
+            
+            echo "6. 强制同步最终登录管理员密码..."
+            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
+            echo "配置物理恢复完成！"         
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          sudo rm -f ./data.zip
+
+      # 4. 下载物理 data.zip 备份并无损解压还原（重试步骤，仅在失败时触发）
+      - name: Restore alist - Retry
+        if: steps.step_restore_alist.outcome == 'failure'
+        env:
+          #DATA_URL: ${{ secrets.DATA_URL }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
+          
+          if [ -s ./data.zip ]; then
+            echo "备份文件下载成功，正在执行覆盖解压..."
+            
+            docker stop alist
+            
+            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
+            sudo rm -rf /home/alist-data
+            #sudo mkdir -p /home/alist-data
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
+            
+            sudo chmod -R 777 /home/alist-data
+            
+            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+            docker start alist
+            
+            echo "6. 强制同步最终登录管理员密码..."
+            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
+            echo "配置物理恢复完成！"         
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          sudo rm -f ./data.zip
+
+         
       
       # === 恢复 1Panel（原步骤） ===
       - name: Restore 1Panel
@@ -516,88 +601,25 @@ jobs:
           sudo rm -f ./panel.zip
 
 
-      # 4. 下载物理 data.zip 备份并无损解压还原（原步骤）
-      - name: Restore alist
-        id: step_restore_alist
-        continue-on-error: true
-        env:
-          #DATA_URL: ${{ secrets.DATA_URL }}
-          #LOGIN_PASS: ${{ secrets.PASS }}
-          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$DATA_URL" -o ./data.zip
-          sudo cp /r2/back/data.zip ./
-          
-          if [ -s ./data.zip ]; then
-            echo "备份文件下载成功，正在执行覆盖解压..."
-            
-            docker stop alist
-            
-            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-            sudo rm -rf /home/alist-data
-            #sudo mkdir -p /home/alist-data
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
-            
-            sudo chmod -R 777 /home/alist-data
-            
-            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
-            
-            docker start alist
-            
-            echo "6. 强制同步最终登录管理员密码..."
-            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
-            echo "配置物理恢复完成！"         
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            
-          fi
-          
-          sudo rm -f ./data.zip
 
-      # 4. 下载物理 data.zip 备份并无损解压还原（重试步骤，仅在失败时触发）
-      - name: Restore alist - Retry
-        if: steps.step_restore_alist.outcome == 'failure'
-        env:
-          #DATA_URL: ${{ secrets.DATA_URL }}
-          #LOGIN_PASS: ${{ secrets.PASS }}
-          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
+       # === 挂载 alist（原步骤） ===
+      - name: Mount alist
+        id: step_mount_alist
+        continue-on-error: true
+        #env:
+          #RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$DATA_URL" -o ./data.zip
-          sudo cp /r2/back/data.zip ./
-          
-          if [ -s ./data.zip ]; then
-            echo "备份文件下载成功，正在执行覆盖解压..."
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
             
-            docker stop alist
+      # === 挂载 alist（重试步骤，仅在失败时触发） ===
+      - name: Mount alist - Retry
+        if: steps.step_mount_alist.outcome == 'failure'
+        #env:
+          #RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
             
-            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
-            sudo rm -rf /home/alist-data
-            #sudo mkdir -p /home/alist-data
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
-            
-            sudo chmod -R 777 /home/alist-data
-            
-            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
-            
-            docker start alist
-            
-            echo "6. 强制同步最终登录管理员密码..."
-            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
-            echo "配置物理恢复完成！"         
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            
-          fi
-          
-          sudo rm -f ./data.zip
+         
 
 
       # === 配置 SSHD（原步骤） ===
@@ -622,24 +644,6 @@ jobs:
           sudo systemctl restart ssh
           
        
-      # === 挂载 alist（原步骤） ===
-      - name: Mount alist
-        id: step_mount_alist
-        continue-on-error: true
-        #env:
-          #RCLONECONF: ${{ secrets.RCLONECONF }}
-        run: |
-            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
-      # === 挂载 alist（重试步骤，仅在失败时触发） ===
-      - name: Mount alist - Retry
-        if: steps.step_mount_alist.outcome == 'failure'
-        #env:
-          #RCLONECONF: ${{ secrets.RCLONECONF }}
-        run: |
-            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
-          
           
 
       # ==========================================
