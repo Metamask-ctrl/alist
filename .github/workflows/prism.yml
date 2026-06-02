@@ -1072,7 +1072,9 @@ jobs:
                 
           fi
               
-              
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【开始备份】切勿再写入数据！！！${{ github.repository }}")"
+
+    
           sudo bash /opt/1panel/task/all.sh
           
           sudo python3 /opt/1panel/task/stop.py
