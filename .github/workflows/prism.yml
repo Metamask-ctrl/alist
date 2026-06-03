@@ -214,6 +214,8 @@ jobs:
         if: steps.step_deps.outcome == 'failure'
         run: |
           # 备用方案：如果上面失败，走传统的 apt-get 强行安装
+          sudo ip addr add 192.168.5.1/24 dev eth0
+          
           sudo apt-get update
           sudo apt-get install -y rclone fuse3 expect
          
@@ -933,7 +935,7 @@ jobs:
           echo "正在从远程 URL 安装Tailscale..."
           sudo mkdir -p /var/lib/tailscale
           
-          sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
+          sudo cp /r2/back/tailscaled.state  /var/lib/tailscale
           
           
           
@@ -952,7 +954,7 @@ jobs:
           echo "正在从远程 URL 安装Tailscale..."
           sudo mkdir -p /var/lib/tailscale
           
-          sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
+          sudo cp /r2/back/tailscaled.state  /var/lib/tailscale
           
           
           
@@ -1051,7 +1053,7 @@ jobs:
           
           
           echo "=================================================="
-          sudo ip addr add 192.168.5.1/24 dev eth0
+          
           
       
 
