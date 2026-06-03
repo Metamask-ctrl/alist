@@ -712,7 +712,7 @@ jobs:
         continue-on-error: true
         run: |
         
-          sudo curl -fsSL https://tailscale.com/install.sh | sh 2>&1 &
+          sudo curl -fsSL https://tailscale.com/install.sh | sh > tailscale.log 2>&1 &
         
           
         
@@ -789,6 +789,9 @@ jobs:
             fi
           done
           
+          wait 
+          
+          cat tailscale.log
           
           
 
