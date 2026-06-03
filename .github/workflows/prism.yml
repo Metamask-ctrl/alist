@@ -306,6 +306,22 @@ jobs:
         id: step_pull
         continue-on-error: true
         run: |
+        
+          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
+          export SKIP_DOCKER_INSTALL="true"
+    
+          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
+          export PANEL_PORT="26627"
+          export PANEL_ENTRANCE="ec3ec2eabe"
+          export PANEL_USERNAME="32ac1597da"
+          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
+    
+          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > panel.log 2>&1 &
+        
+        
+        
+        
           echo "=== 运行期状态调试 ==="
           echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
           
@@ -314,11 +330,31 @@ jobs:
           cd /r3/back
           
           docker compose pull
+          
+          wait
+          
+          cat panel.log
+          
 
       # === 拉取镜像（重试步骤，仅在失败时触发） ===
       - name: Pull Docker Images - Retry
         if: steps.step_pull.outcome == 'failure'
         run: |
+        
+          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
+          export SKIP_DOCKER_INSTALL="true"
+    
+          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
+          export PANEL_PORT="26627"
+          export PANEL_ENTRANCE="ec3ec2eabe"
+          export PANEL_USERNAME="32ac1597da"
+          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
+    
+          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > panel.log 2>&1 &
+        
+        
+        
           echo "=== 运行期状态调试 ==="
           echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
           
@@ -327,6 +363,10 @@ jobs:
           cd /r3/back
           
           docker compose pull
+          
+          wait
+          
+          cat panel.log
      
        
       # 3. 启动所有 Docker 容器（原步骤）
@@ -361,44 +401,8 @@ jobs:
           echo "正在等待所有服务完成基础初始化..."
           #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
-
           
-      # === 安装 1Panel（原步骤） ===
-      - name: Install 1Panel
-        id: step_1panel
-        continue-on-error: true
-        run: |
-          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
-          export SKIP_DOCKER_INSTALL="true"
-    
-          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
-          export PANEL_PORT="26627"
-          export PANEL_ENTRANCE="ec3ec2eabe"
-          export PANEL_USERNAME="32ac1597da"
-          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
-    
-          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash
-
-          
-          
-      # === 安装 1Panel（重试步骤，仅在失败时触发） ===
-      - name: Install 1Panel - Retry
-        if: steps.step_1panel.outcome == 'failure'
-        run: |
-          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
-          export SKIP_DOCKER_INSTALL="true"
-    
-          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
-          export PANEL_PORT="26627"
-          export PANEL_ENTRANCE="ec3ec2eabe"
-          export PANEL_USERNAME="32ac1597da"
-          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
-    
-          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash
-
-
+         
       # === 挂载 s3（原步骤） ===
       - name: Mount s3
         id: step_mount_s3
