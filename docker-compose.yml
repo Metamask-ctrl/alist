@@ -2,9 +2,6 @@ version: '3.8'
 services:
   alist:
     image: xhofe/alist:latest
-    environment:
-      HTTP_PROXY: http://192.168.5.1:36688
-      HTTPS_PROXY: http://192.168.5.1:36688
     container_name: alist
     ports:
       - "5244:5244"
@@ -15,6 +12,8 @@ services:
       - PUID=0
       - PGID=0
       - UMASK=022
+      - HTTP_PROXY=http://192.168.5.1:36688
+      - HTTPS_PROXY=http://192.168.5.1:36688
     restart: always
 
 
