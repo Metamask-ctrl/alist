@@ -5,6 +5,8 @@ services:
     container_name: alist
     ports:
       - "5244:5244"
+      - "5255:5255"
+      - "5566:5566"
     volumes:
       - /home/alist-data:/opt/alist/data
       - /:/aaa
