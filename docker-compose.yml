@@ -14,8 +14,8 @@ services:
       - PUID=0
       - PGID=0
       - UMASK=022
-      - HTTP_PROXY=http://192.168.5.1:36688
-      - HTTPS_PROXY=http://192.168.5.1:36688
+      - HTTP_PROXY=http://192.168.5.1:7890
+      - HTTPS_PROXY=http://192.168.5.1:7890
     restart: always
 
 
