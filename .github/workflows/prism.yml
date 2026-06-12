@@ -703,6 +703,15 @@ jobs:
         #env:
           #RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
+          
+          wget https://downloads.mitmproxy.org/12.2.3/mitmproxy-12.2.3-linux-x86_64.tar.gz
+          
+          sudo tar -xvf mitmproxy-12.2.3-linux-x86_64.tar.gz
+          
+          sudo chmod 777 mitmdump mitmproxy mitmweb
+          
+          sudo ./mitmweb --listen-host 0.0.0.0 --listen-port 5655 --set web-password=Moncha 2>&1 & 
+
           sudo rclone mount mohic:/ /alist --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon      
       # === 挂载 alist（重试步骤，仅在失败时触发） ===
       - name: Mount alist - Retry
