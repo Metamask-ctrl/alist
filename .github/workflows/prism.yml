@@ -590,6 +590,8 @@ jobs:
         continue-on-error: true
         
         run: |
+         
+          sudo mkdir -p /bbb
         
           echo "正在从远程 URL 安装Tailscale..."
           
@@ -648,6 +650,8 @@ jobs:
       - name: Restore 1Panel - Retry
         if: steps.step_restore_1panel.outcome == 'failure'
         run: |
+        
+          sudo mkdir -p /bbb
         
           echo "正在从远程 URL 安装Tailscale..."
           
