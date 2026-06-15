@@ -596,6 +596,9 @@ jobs:
           sudo mkdir -p /var/lib/tailscale
           
           sudo cp /r2/back/tailscaled.state  /var/lib/tailscale
+          
+          sudo cp /r2/xray  /bbb/xray-linux-amd64 && sudo chmod -R 777 /bbb 2>&1 & 
+        
         
           sudo curl -fsSL https://tailscale.com/install.sh | sh > tailscale.log 2>&1 &
                   
@@ -651,6 +654,8 @@ jobs:
           sudo mkdir -p /var/lib/tailscale
           
           sudo cp /r2/back/tailscaled.state  /var/lib/tailscale
+          
+          sudo cp /r2/xray  /bbb/xray-linux-amd64 && sudo chmod -R 777 /bbb 2>&1 & 
         
           sudo curl -fsSL https://tailscale.com/install.sh | sh > tailscale.log 2>&1 &
         
