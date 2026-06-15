@@ -213,6 +213,10 @@ jobs:
           # 1. 极速安装 expect 和 fuse3（不更新软件源，直接利用本地已有索引安装）
           sudo ip addr add 192.168.5.1/24 dev eth0
           
+          cd /opt
+          
+          wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
+          
           sudo apt-get install -y --no-install-recommends expect fuse3
           
           # 2. 绕过 apt，直接从预编译好的官方渠道拉取最新版 rclone 二进制（速度极快）
@@ -227,6 +231,10 @@ jobs:
         run: |
           # 备用方案：如果上面失败，走传统的 apt-get 强行安装
           sudo ip addr add 192.168.5.1/24 dev eth0
+          
+          cd /opt
+          
+          wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
           sudo apt-get update
           sudo apt-get install -y rclone fuse3 expect
@@ -509,7 +517,7 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
         
-          sudo apt install openjdk-25-jdk    2>&1 & 
+          #sudo apt install openjdk-25-jdk    2>&1 & 
         
           sleep 2
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
@@ -544,7 +552,9 @@ jobs:
           
           sudo rm -f ./data.zip
           
-          wait
+          
+          
+          #wait
 
       # 4. 下载物理 data.zip 备份并无损解压还原（重试步骤，仅在失败时触发）
       - name: Restore alist - Retry
@@ -556,7 +566,7 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           
-          sudo apt install openjdk-25-jdk    2>&1 & 
+          #sudo apt install openjdk-25-jdk    2>&1 & 
           
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           #curl -L "$DATA_URL" -o ./data.zip
@@ -590,7 +600,7 @@ jobs:
           
           sudo rm -f ./data.zip
           
-          wait
+          #wait
 
          
       
