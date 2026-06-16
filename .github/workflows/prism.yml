@@ -1258,9 +1258,14 @@ jobs:
           # 执行你的备份脚本（传入你前面测试过的北京时间参数）
           # 注意：请确保 /r2/back/ 等路径或依赖在 Runner 中是存在的，或者改用你的实际备份命令
           
+          sudo bash /opt/1panel/task/sync.sh 2>&1 & 
+          
           sudo bash /opt/1panel/task/all.sh
+          
           
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流被取消，紧急备份时间: $BACKUP_TIME，${{ github.repository }}"
           
           #sudo python3 /opt/1panel/task/stop.py
+          
+          wait
           
