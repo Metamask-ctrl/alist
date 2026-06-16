@@ -994,6 +994,8 @@ jobs:
         env:
           TAIL: ${{ secrets.TAIL }}
         run: |
+        
+          sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
    
          
           sudo nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/dev/null 2>&1 &
@@ -1008,6 +1010,9 @@ jobs:
         env:
           TAIL: ${{ secrets.TAIL }}
         run: |
+        
+          sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
+          
           echo "正在从远程 URL 安装Tailscale..."
           sudo mkdir -p /var/lib/tailscale
           
@@ -1074,8 +1079,7 @@ jobs:
 
       - name: ZeroTier
         uses: zerotier/github-action@v1.0.1
-        with:
-          network_id: 272f5eae166a53a2
+        
         
           
         # 6. 保持工作流运行
