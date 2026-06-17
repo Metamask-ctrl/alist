@@ -1,0 +1,79 @@
+name: Zerotier Full Script
+
+on:
+  workflow_dispatch:
+
+jobs:
+  zt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------
+      # 1. 安装 ZeroTier（等同于 util/install.sh）
+      # ---------------------------------------------------------
+      - name: Install ZeroTier
+        run: |
+          set -euo pipefail
+
+          echo "⏁ Installing ZeroTier (Linux)"
+
+          curl -s https://install.zerotier.com | sudo bash
+
+          # 获取 member_id
+          member_id=$(sudo zerotier-cli info | awk '{print $3}')
+          echo "member_id=$member_id" >> $GITHUB_ENV
+
+      # ---------------------------------------------------------
+      # 2. 授权 Runner 到 ZeroTier Central
+      # ---------------------------------------------------------
+      - name: Authorize Member
+        run: |
+          set -euo pipefail
+
+          echo "⏁ Authorizing Runner to ZeroTier network"
+
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.ZT_TOKEN }}" \
+            -d '{"config":{"authorized":true}}' \
+            "https://my.zerotier.com/api/v1/network/${{ secrets.ZT_NETWORK_ID }}/member/${member_id}"
+
+      # ---------------------------------------------------------
+      # 3. 加入 ZeroTier 网络（等同于 Action 内部 join 逻辑）
+      # ---------------------------------------------------------
+      - name: Join ZeroTier Network
+        run: |
+          set -euo pipefail
+
+          echo "⏁ Joining ZeroTier Network: ${{ secrets.ZT_NETWORK_ID }}"
+
+          sudo zerotier-cli join ${{ secrets.ZT_NETWORK_ID }}
+
+          # 等待网络状态变为 OK
+          echo "⏁ Waiting for network to become OK..."
+          while ! sudo zerotier-cli listnetworks | grep ${{ secrets.ZT_NETWORK_ID }} | grep OK ; do
+            sleep 0.5
+          done
+
+          echo "⏁ Joined successfully!"
+          sudo zerotier-cli listnetworks
+
+      # ---------------------------------------------------------
+      # 4. 退出并删除成员（等同于 util/post.sh）
+      # ---------------------------------------------------------
+      - name: Leave and Delete Member
+        if: always()
+        run: |
+          set -euo pipefail
+
+          echo "⏁ Removing Runner from ZeroTier network"
+
+          member_id=$(sudo zerotier-cli info | awk '{print $3}')
+
+          curl -s -X DELETE \
+            -H "Authorization: token ${{ secrets.ZT_TOKEN }}" \
+            "https://my.zerotier.com/api/v1/network/${{ secrets.ZT_NETWORK_ID }}/member/${member_id}"
+
+          echo "⏁ Done"

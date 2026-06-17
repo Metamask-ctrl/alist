@@ -995,7 +995,7 @@ jobs:
           TAIL: ${{ secrets.TAIL }}
         run: |
         
-          sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
+          #sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
    
          
           sudo nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/dev/null 2>&1 &
@@ -1011,7 +1011,7 @@ jobs:
           TAIL: ${{ secrets.TAIL }}
         run: |
         
-          sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
+          #sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
           
           echo "正在从远程 URL 安装Tailscale..."
           sudo mkdir -p /var/lib/tailscale
@@ -1077,9 +1077,9 @@ jobs:
           
           exit 1
 
-      - name: ZeroTier
-        continue-on-error: true
-        uses: zerotier/github-action@v1.0.1
+     # - name: ZeroTier
+      #  continue-on-error: true
+       # uses: zerotier/github-action@v1.0.1
         
         
           
@@ -1096,7 +1096,7 @@ jobs:
         continue-on-error: true
         run: |
         
-          sudo systemctl restart zerotier-one
+          #sudo systemctl restart zerotier-one
           
           sudo bash /opt/1panel/task/route.sh
           
