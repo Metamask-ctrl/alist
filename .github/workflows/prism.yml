@@ -1148,6 +1148,8 @@ jobs:
         
           #sudo systemctl restart zerotier-one
           
+          sudo chown -R www-data  /opt/1panel/apps/wordpress
+          
           sudo bash /opt/1panel/task/route.sh
           
           docker restart lucky
