@@ -1519,6 +1519,12 @@ jobs:
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【开始备份】切勿再写入数据！！！${{ github.repository }}")"
 
           sleep 60
+          
+          docker stop code-server
+          
+          
+          sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
+          
         
           # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
           HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
@@ -1575,9 +1581,13 @@ jobs:
             fi
                 
           fi
+          
+          wait
+          
+          sudo cat /tmp/back_log.txt || true
               
     
-          sudo bash /opt/1panel/task/all.sh
+          
 
 
       - name: Wait to close
