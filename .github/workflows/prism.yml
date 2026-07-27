@@ -788,6 +788,18 @@ jobs:
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
             
+            if command -v 1pctl >/dev/null 2>&1; then
+              echo "1pctl存在"
+            else
+            
+              echo "1pctl不存在"
+              echo "重新安装"
+              
+              curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > /tmp/panel.log
+              
+            fi
+            
+            
             # 使用前面已经安装/缓存好的解压命令
             sudo 1pctl stop 
             
@@ -865,6 +877,18 @@ jobs:
           
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
+ 
+            if command -v 1pctl >/dev/null 2>&1; then
+              echo "1pctl存在"
+            else
+            
+              echo "1pctl不存在"
+              echo "重新安装"
+              
+              curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > /tmp/panel.log
+              
+            fi
+ 
             
             # 使用前面已经安装/缓存好的解压命令
             sudo 1pctl stop 
