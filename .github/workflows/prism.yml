@@ -1541,10 +1541,11 @@ jobs:
         run: |
         
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【开始备份】切勿再写入数据！！！${{ github.repository }}")"
-
-          sleep 60
           
+          docker stop siyuan
           docker stop code-server
+          
+          sleep 60
           
           
           sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
