@@ -629,7 +629,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo 7z -P"$DATA_PASS" ./data.zip -o/home
+            sudo 7z x  -p"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -679,7 +679,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo 7z -P"$DATA_PASS" ./data.zip -o/home
+            sudo 7z x  -p"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -806,7 +806,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo 7z -P"$DATA_PASS" ./panel.zip -o/opt/1panel
+            sudo 7z x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -896,7 +896,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo 7z -P"$DATA_PASS" ./panel.zip -o/opt/1panel
+            sudo 7z x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -1196,7 +1196,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo 7z -P"$DATA_PASS" ./root.zip -o./root
+            sudo 7z x  -p"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
@@ -1229,7 +1229,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo 7z -P"$DATA_PASS" ./root.zip -o./root
+            sudo 7z x  -p"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
