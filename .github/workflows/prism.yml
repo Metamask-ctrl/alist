@@ -218,8 +218,7 @@ jobs:
           
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
-          sudo apt-get install -y --no-install-recommends expect fuse3 wireguard-tools uvicorn
-          
+          sudo apt-get install -y --no-install-recommends expect fuse3 wireguard-tools uvicorn p7zip-full          
           # 2. 绕过 apt，直接从预编译好的官方渠道拉取最新版 rclone 二进制（速度极快）
           sudo curl -fsSL https://rclone.org/install.sh | sudo bash
           
@@ -238,7 +237,7 @@ jobs:
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
           sudo apt-get update
-          sudo apt-get install -y rclone fuse3 expect uvicorn
+          sudo apt-get install -y rclone fuse3 expect uvicorn p7zip-full  
          
          
           
@@ -630,7 +629,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
+            sudo 7z -P"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -680,7 +679,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./data.zip -d /home
+            sudo 7z -P"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -807,7 +806,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d  /opt/1panel
+            sudo 7z -P"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -897,7 +896,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d  /opt/1panel
+            sudo 7z -P"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -1197,7 +1196,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo unzip -P "$DATA_PASS" ./root.zip -d ./root
+            sudo 7z -P"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
@@ -1230,7 +1229,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo unzip -P "$DATA_PASS" ./root.zip -d ./root
+            sudo 7z -P"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
