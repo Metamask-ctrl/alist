@@ -53,7 +53,6 @@ jobs:
           username: mohicai
           password: ${{ secrets.DOCKERPULL }}  
 
-   
       - name: Cleanup Disk Space (Free up to 30GB+)
         continue-on-error: true
         run: |
@@ -322,6 +321,12 @@ jobs:
           sudo rm -f ./rclone.conf
           
           
+      - name: Ensure Docker Login Status
+        run: |
+          sudo mkdir -p /root/.docker
+          sudo cp -f ~/.docker/config.json /root/.docker/config.json
+          echo "=== 检查 root 用户的 Docker 登录状态 ==="
+          sudo docker info | grep -i "username" || true
 
       # === 拉取镜像（原步骤） ===
       - name: Pull Docker Images
@@ -353,7 +358,7 @@ jobs:
           
           cd /r3/back
           
-          docker compose pull
+          sudo -E docker compose pull
           
           # docker compose config --images | xargs -P 8 -n1 docker pull
           
