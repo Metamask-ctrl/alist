@@ -1549,8 +1549,11 @@ jobs:
           docker stop siyuan
           docker stop code-server
           
-          sleep 60
+          sleep 50
           
+          docker stop baidu
+          
+          sleep 10
           
           sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
           
