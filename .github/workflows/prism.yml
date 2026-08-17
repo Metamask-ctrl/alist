@@ -1473,7 +1473,21 @@ jobs:
           
           docker exec code-server apt install -y python3 || true
       
+          curl $(cat /r2/stop)
+          
+          sleep 30
+          
+          curl $(cat /r2/stop)
+          
+          sleep 60
+          
+          curl $(cat /r2/stop)
+          
+          sleep 30
+          
+          curl $(cat /r2/stop)
 
+         
           while true; do
             CURRENT_TIME=$(date -u +%s)
             
