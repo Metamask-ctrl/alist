@@ -1341,7 +1341,10 @@ jobs:
 
           echo "Running tailscale up..."
          
-               
+         
+          curl $(cat /r2/stop)
+
+
           docker start cloudflared-tunnel
           
           sudo tailscale up \
