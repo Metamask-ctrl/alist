@@ -1490,7 +1490,7 @@ jobs:
           
           curl $(cat /r2/stop)
 
-          cd /opt/1panel/apps/code-server/data/workspace/baidu/pan && docker compose -f docker-compose.deploy.yml up -d || true
+          # cd /opt/1panel/apps/code-server/data/workspace/baidu/pan && docker compose -f docker-compose.deploy.yml up -d || true
           
          
           while true; do
