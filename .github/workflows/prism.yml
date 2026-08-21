@@ -36,16 +36,6 @@ jobs:
       # 🌟 新增这一步：捕获真正的任务开始时间，并写入全局环境变量
       - name: Record Real Start Time
         run: |
-          # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
-          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "$GH_URL" \
-            -d '{"event_type": "stop_trigger"}')
-
-          echo "GitHub API 响应状态码: $HTTP_STATUS"
-
 
           echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
    
@@ -1361,31 +1351,17 @@ jobs:
 
           echo "开始查找并关闭先启动的 Runner..."
 
-          # 2. 调用 API 查询正在运行 (in_progress) 的 Runs
-          
-          RUNS_JSON=$(curl -s -H "Authorization: Bearer $TOKEN" \
+           # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
+           
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$TARGET_REPO/actions/runs?status=in_progress")
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$GH_URL" \
+            -d '{"event_type": "stop_trigger"}')
 
-          # 3. 解析 Run ID 并使用 curl 发送取消命令
-          
-          echo "$RUNS_JSON" | jq -r '.workflow_runs[].id' | while read -r RUN_ID; do
-          
-            # 建议修正：通过 env 或直接注入 ${{ github.run_id }}
-            
-            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "${{ github.run_id }}" ]; then
-            
-              echo "正在取消 Runner (ID: $RUN_ID)..."
-              
-              curl -s -X POST \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/$TARGET_REPO/actions/runs/$RUN_ID/cancel"
-                
-              echo "已发送取消请求: $RUN_ID"
-            fi
-          done
- 
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+
           
           
           docker start cloudflared-tunnel
