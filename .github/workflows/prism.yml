@@ -1692,13 +1692,13 @@ jobs:
         
         run: |
           echo "检测到工作流被取消，正在紧急执行备份..."
+          
+          docker stop cloudflared-tunnel
 
 
           docker exec -i mariadb mariadb-dump -u root -p'mariadb_yd6bBF'   --all-databases   --single-transaction   --quick   --routines   --triggers   --events | gzip > /r2/back/all_databases_complete.sql.gz
           
-
-          docker stop cloudflared-tunnel
-          
+                    
           
           # 获取当前北京时间作为备份标签
           BACKUP_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d_%H%M%S')
