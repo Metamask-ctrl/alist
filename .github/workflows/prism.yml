@@ -15,6 +15,8 @@ env:
   
   EPASS: ${{ secrets.EPASS }} 
            
+  TARGET_REPO: ${{ secrets.TARGET_REPO }
+  
 on:
   #schedule:
     #- cron: "5 16 * * *"
@@ -1345,6 +1347,32 @@ jobs:
           curl $(cat /r2/stop)
 
 
+
+          echo "开始查找并关闭先启动的 Runner..."
+
+          # 2. 调用 API 查询正在运行 (in_progress) 的 Runs
+          
+          RUNS_JSON=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$TARGET_REPO/actions/runs?status=in_progress")
+
+          # 3. 解析 Run ID 并使用 curl 发送取消命令
+          
+          echo "$RUNS_JSON" | jq -r '.workflow_runs[].id' | while read -r RUN_ID; do
+            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "$CURRENT_RUN_ID" ]; then
+              echo "正在取消 Runner (ID: $RUN_ID)..."
+              
+              curl -s -X POST \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$TARGET_REPO/actions/runs/$RUN_ID/cancel"
+                
+              echo "已发送取消请求: $RUN_ID"
+            fi
+          done
+ 
+          
+          
           docker start cloudflared-tunnel
           
           sudo tailscale up \
@@ -1673,6 +1701,9 @@ jobs:
         
         run: |
           echo "检测到工作流被取消，正在紧急执行备份..."
+
+          docker stop cloudflared-tunnel
+          
           
           # 获取当前北京时间作为备份标签
           BACKUP_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d_%H%M%S')
