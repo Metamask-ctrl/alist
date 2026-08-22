@@ -1509,7 +1509,7 @@ jobs:
           
           curl $(cat /r2/stop)
 
-          cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && curl -fsSL https://xy-update.zhinianboke.com/deploy_remote.sh | sed 's/\r$//' | bash || true
+          cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && docker compose up -d || true
           
          
           while true; do
